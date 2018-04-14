@@ -1,5 +1,5 @@
-; VIC 20 Final Expansion Cartridge - Revision 013
-; Thomas Winkler - May 3, 2009
+; VIC 20 Final Expansion Cartridge - Revision 014
+; Thomas Winkler - July 27, 2009
 
 ; Thanks to Leif Bloomquist
 ; Thanks to everyone on the Denial forums
@@ -13,6 +13,7 @@ CAS_BUF     = $033c                     ;CASSETTE BUFFER
 F_IO        = CAS_BUF +0                ;IO FLAG
 F_WE        = CAS_BUF +1                ;WEDGE FLAG
 F_CURDEV    = CAS_BUF +2                ;WEDGE FLAG
+F_JOYREP    = CAS_BUF +3                ;JOYSTICK TIMER
 
 MY_WEDGE_LO = CAS_BUF +4                ;WEDGE LOW ADDRESS
 
@@ -269,34 +270,45 @@ START
 JMPTABLE
   jmp HELP2                             ; sys 41000: Help sreen
   jmp MY_WEDGE_INIT                     ; sys 41003: Init Wedge
-  jmp MOVE_WEDGE_0500                   ; sys 41006: Copy Wedge
+  jmp MOVE_WEDGE_LOW                    ; sys 41006: Copy Wedge to low mem
 
 
+
+  ; COPY FIRMWARE FROM EEPROM TO SRAM
 COPYROM
-  lda #FEMOD_ROM                        ;ROM
-  ldx #0
-  jsr UNLOCK_IO
+  ;sta $a000                            ;UNLOCK IO - DOESN'T WORK SO!!
 
-  lda #$a0
-  ldy #$00
-  sta PT1 +1
-  sty PT1
+  lda #FEMOD_ROM                        ;ROM
+  jsr UNLOCK_IO                         ;UNLOCK IO
+
+  lda #>$a000
+  ldy #<$a000
+  sta PT2 +1
+  sty PT2
+
+  jsr TEST_RAM                          ;RAM OK?
+  bcc CORO_2
+
   ldx #32                               ; copy 32 pages
   ;ldy #0
 CORO_1
-  lda (PT1),y
-  sta (PT1),y
+  lda (PT2),y
+  sta (PT2),y
   iny
   bne CORO_1
-  inc PT1 +1
+  inc PT2 +1
   dex
   bne CORO_1
-  sty CARTID
-  sty CARTID +1
+  ;sty CARTID
+  ;sty CARTID +1
 
-  lda #FEMOD_RAM +$10                ; ALL RAM, PROTECT BLK-5
+  lda #FEMOD_RAM +$10                   ; ALL RAM, PROTECT BLK-5
   sta IO_FINAL
+  sec
+CORO_2
   rts
+
+
 
 INIT_CART
   lda #$6e                ; Blue Screen
@@ -324,9 +336,16 @@ CHECK
 ; if SHIFT, go straight to BASIC with wedge enabled.
 SHIFT
   cmp #$01
-  beq STARTWEDGE_H
+  bne SHIF_1
+  jmp STARTWEDGE
 
+SHIF_1
   jsr COPYROM
+;  bcc SHIF_2
+
+;  lda #0
+;  jsr SetVicMemConfig
+SHIF_2
 
 ; ==============================================================
 ; Default Startup - show init screen
@@ -340,22 +359,22 @@ SSCREEN
 
 SETUPTIMEOUT
   ;Initialize Timer
-  ldy $a1 ; part of TI clock, updated every 256/60 = 4.2 seconds
-  iny
-  iny
-  iny     ;Jump ahead three 'ticks' = 12.6 seconds
+;  ldy $a1 ; part of TI clock, updated every 256/60 = 4.2 seconds
+;  iny
+;  iny
+;  iny     ;Jump ahead three 'ticks' = 12.6 seconds
 
 ; Check for timeout
 TIMEOUT
-  cpy $a1
-  bne KEYS
+;  cpy $a1
+;  bne KEYS
 
-STARTWEDGE_H
-  jmp STARTWEDGE
+;STARTWEDGE_H
+;  jmp STARTWEDGE
 
 ; Check keys
 KEYS
-  jsr GETIN
+  jsr GETJOY
   cmp #$00
   beq TIMEOUT
 
@@ -395,8 +414,13 @@ F4
 
 F5
   cmp #$87  ;F5
-  bne PLUS
+  bne F6
   ;jmp CARTLOADER
+
+F6
+  cmp #$8b  ;F6
+  bne PLUS
+  jmp UTIL_MENU
 
 PLUS
   cmp #$2b  ;+
@@ -456,10 +480,16 @@ STARTWEDGE
   sei
   jsr SY_RAMTAS                         ; RAMTAS - Initialise System Constants
   jsr INIT_BASIC
+
   jsr MY_WEDGE_INIT
 
-STARTWEDGE2
+STARTWEDGE1
   jsr SY_INITMSG                        ; INIT Message
+
+STARTWEDGE2
+
+  ;jsr COPYROM                           ; COPY FIRMWARE TO SRAM
+  ;bcc xxx                               ; ==> RAM ERROR
 
   lda #<WEDGEMESSAGE1b
   ldy #>WEDGEMESSAGE1b
@@ -472,7 +502,7 @@ STWE_3
   lda #<WEDGEMESSAGE2
   ldy #>WEDGEMESSAGE2
   jsr STROUT
-  jmp BASIC2
+  jmp BASIC_WARM
 
 
 ; ==============================================================
@@ -536,7 +566,7 @@ WAITSPACE_2
 
 
 WAITSPACE
-  jsr $ffe4
+  jsr GETIN
   cmp #$8C                              ;F8
   beq WASP_1
   cmp #$20                              ;SPACE
@@ -634,7 +664,7 @@ KEYS_0
   jsr SHOW_WE
 
 KEYS_1
-  jsr $ffe4
+  jsr GETIN
 
 
 
@@ -762,14 +792,16 @@ SET_RAM8
   pla
   pha
   jsr SetVicMemConfig
-  jsr MY_WEDGE_INIT
   pla
   and #$bf
   cmp #$80                              ; WEDGE $5 ONLY FOR ALL RAM
   bne SET_RAM9
-  jsr MOVE_WEDGE_0500                   ; COPY WEDGE TO $500
-SET_RAM9
+  jsr SY_INITMSG                        ; INIT Message
+  jsr MOVE_WEDGE_LOW                    ; COPY WEDGE TO $500
   jmp STARTWEDGE2
+SET_RAM9
+  jsr MY_WEDGE_INIT
+  jmp STARTWEDGE1
 
 
 ;-------- SWITCH CARTRIDGE AND RUN BASIC
@@ -837,30 +869,63 @@ __SET_IO_RUN_E
 
 
 
-;-------- COPY ROM TO RAM
+;-------- UNLOCK IO IN START-MODE
 UNLOCK_IO
-  pha
-  txa
   pha
   ldy #(__UNLOCK_IO_E - __UNLOCK_IO)
   lda #>__UNLOCK_IO
   ldx #<__UNLOCK_IO
   jsr COPY_PROC
   pla
-  tax
-  pla
   jmp BIP
-
-
 
 ;-------- UNLOCK START MODE AND SET MODE
 __UNLOCK_IO
-  sta $a000                             ;UNLOCK IO
+  sei
+  ldx $a000                             ;
+  stx $a000                             ;UNLOCK IO
   sta IO_FINAL
-  stx IO_FINAL +1
+  cli
   rts
 __UNLOCK_IO_E
 
+
+
+
+
+
+;-------- TEST IF RAM IS AT (PT1)
+TEST_RAM
+  ldy #(__TEST_RAM_E - __TEST_RAM)
+  lda #>__TEST_RAM
+  ldx #<__TEST_RAM
+  jsr COPY_PROC
+  jmp BIP
+
+;-------- TEST IF RAM IS AT (PT1)  ZF=1 :: RAM IS OK
+__TEST_RAM
+  ;ldx IO_FINAL
+  sei
+  lda #FEMOD_RAM                        ;RAM
+  sta IO_FINAL
+
+  ldy #0
+  lda (PT2),y
+  pha
+  eor #$ff
+  sta (PT2),y                           ;STORE INVERTED VALUE
+  cmp (PT2),y                           ;CHECK IF ($A) WRITEABLE
+  beq __TERA_1
+  clc                                   ;RAM ERROR!!
+__TERA_1
+  pla
+  sta (PT2),y                           ;RESTORE OLD VALUE
+
+  ldx #FEMOD_ROM                        ;ROM
+  stx IO_FINAL
+  cli
+  rts
+__TEST_RAM_E
 
 
 
@@ -904,6 +969,72 @@ FONT1   = 142               ; BIG LETTERS & GRAFIC
 FONT2   = 14                ; BIG AND SMALL LETTERS
 AT      = $40
 
+
+
+; ==============================================================
+; SUBMENU UTILITY
+; ==============================================================
+
+UTIL_MENU
+  lda #<UTILSCREEN
+  ldy #>UTILSCREEN
+  jsr STROUT
+
+  ; Check keys
+KEYS_UT0
+  ;jsr SHOW_IO
+  ;jsr SHOW_WE
+
+KEYS_UT1
+  jsr GETIN
+
+
+
+F1_UT1
+  cmp #$85  ;F1
+  bne F2_UT1
+
+  ;jsr SetVicAs3K
+  ;lda #FEMOD_RAM +$1E                   ;3KB RAM
+  ;bne SET_RAM
+
+F2_UT1
+  cmp #$89  ;F2
+  bne F3_UT1
+
+
+F3_UT1
+;  cmp #$86  ;F3
+;  bne F4_UT1
+
+
+F4_UT1
+;  cmp #$8a  ;F4
+;  bne F5_UT1
+
+
+F5_UT1
+  cmp #$87  ;F5
+  bne F6_UT1
+
+
+F6_UT1
+  cmp #$8b  ;F6
+  bne F7_UT1
+
+
+F7_UT1
+  cmp #$88  ;F7
+  bne F8_UT1
+
+
+F8_UT1
+  cmp #$8C
+  bne KEYS_UT1
+  jmp SSCREEN
+
+
+
 ; ==============================================================
 ; Help screen
 ; ==============================================================
@@ -925,7 +1056,7 @@ HELPSCREEN3
   dc.b CR  ;RVSOFF Not Needed
   dc.b "sys41000 hELP", CR
   dc.b "sys41003 wEDGE", CR
-  dc.b "sys41006 wEDGE at $5", CR
+  dc.b "sys41006 wEDGE at $4", CR
   dc.b $00
 
 ; ==============================================================
@@ -935,20 +1066,21 @@ HELPSCREEN3
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R013", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R014", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
   dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
   dc.b "",RVSON,"f4",RVSOFF,"  hELP", CR, CR
   dc.b RVSON,"f5",RVSOFF," cART lOADER", CR, CR
-  dc.b "",RVSON,"f6",RVSOFF,"  fe uTILITIES", CR, CR
+  dc.b "",RVSON,"f6",RVSOFF,"  fe3 uTILITIES", CR, CR
   dc.b RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
   dc.b "",RVSON,"f8",RVSOFF,"  basic (NORMAL)", CR, CR, CR
   dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #8"
   dc.b $00
 
+
 ; ==============================================================
-; RAMM setting menu
+; RAM setting menu
 ; ==============================================================
 
 RAMSCREEN
@@ -966,8 +1098,24 @@ RAMSCREEN
   dc.b $00
 
 
+; ==============================================================
+; UTILITY menu
+; ==============================================================
 
-
+UTILSCREEN
+  dc.b CLRHOME,FONT2,YELLOW,RVSON, "    fe3 uTILITIES     ",CR,CR,CR
+  dc.b WHITE,RVSON,"f1",RVSOFF," fLASH pROGRAM", CR, CR
+  dc.b "",RVSON,"f2",RVSOFF,"  fLASH fIRMWARE", CR, CR
+  ;dc.b RVSON,"f3",RVSOFF," 16 kb (19967)", CR, CR
+  dc.b CR, CR
+  ;dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
+  dc.b CR, CR
+  dc.b RVSON,"f5",RVSOFF," bACKUP fLASH", CR, CR
+  ;dc.b "",RVSON,"f6",RVSOFF,"  oFF", CR, CR
+  dc.b CR, CR
+  dc.b RVSON,"f7",RVSOFF," rESTORE fLASH", CR, CR, CR
+  dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
+  dc.b $00
 
 
 
@@ -988,6 +1136,27 @@ DLOADER
 
 
 DLOADER1
+  jsr INIT_CART                         ; Screen Colors
+
+  lda #<DLOADSCREEN
+  ldy #>DLOADSCREEN
+  jsr STROUT
+
+  jsr COPYROM                           ; COPY FIRMWARE TO SRAM
+  bcs DLO_2                             ; ==> RAM OK
+
+  lda #<MSG_RAMMERR
+  ldy #>MSG_RAMMERR
+  ;jmp MSG_BOX
+
+MSG_BOX
+  jsr STR_AT
+  jsr WAITSPACE
+  ldx #2
+  jmp DEL_LINE
+
+
+DLO_2
   jsr DLOADER_INIT
   bcs DLOADER_E
 
@@ -999,12 +1168,6 @@ DLOADER1
 
 ;-------------- LOAD LOADER FILE
 DLOADER_INIT
-  jsr INIT_CART                         ; Screen Colors
-
-  lda #<DLOADSCREEN
-  ldy #>DLOADSCREEN
-  jsr STROUT
-
   jsr MENU_INIT
 
   lda #<MSG_LOAD
@@ -1043,6 +1206,62 @@ DLOADSCREEN
 
 MSG_LOAD
   dc.b 1, 3, WHITE, "LOADING ...",0
+MSG_RAMMERR
+  dc.b 2, 3, RED, "ram eRROR $a ...",0
+
+
+
+; ==============================================================
+; GET KEY / JOYSTICK
+; ==============================================================
+
+GETJOY
+  lda $a2
+  cmp F_JOYREP
+  bne GEJO_E
+  
+  clc
+  adc #4
+  sta F_JOYREP
+  
+  sei
+  lda VIA1 +$f
+  and #$3c
+  ldx #127
+  stx VIA2 +$2
+  ldx VIA2
+  bmi GEJO_1
+  ora #2
+GEJO_1
+  ldx #255
+  stx VIA2 +$2
+  cli
+  tay
+  ldx #17
+  and #8                                ;down
+  beq GEJO_9
+  tya
+  ldx #145
+  and #4                                ;up
+  beq GEJO_9
+  tya
+  ldx #13
+  and #32                               ;fire
+  beq GEJO_9
+  tya
+  ldx #29
+  and #2                                ;right
+  beq GEJO_9
+  tya
+  ldx #157
+  and #16                               ;left
+  beq GEJO_9
+GEJO_E
+  jmp GETIN
+
+GEJO_9
+  txa
+  rts
 
 
 ; ==============================================================
@@ -1096,7 +1315,7 @@ MEHA_1
   lda #0
   sta KEYANZ
 MEHA_5
-  jsr GETIN
+  jsr GETJOY
   cmp #$00
   beq MEHA_5
 
@@ -1371,7 +1590,7 @@ MESE_E
   beq LOCO_SYS
 
 LOCO_RELOAD
-  jsr COPYROM                           ;RESTORE CART-CODE AND SWITCH TO RAM
+  ;jsr COPYROM                           ;RESTORE CART-CODE AND SWITCH TO RAM
   ldx BIP_CMD
   cpx #TOK_RELO                         ;RELOAD??
   beq LORE_E
@@ -2016,7 +2235,7 @@ MSG_DOS
 ; SET MEMORY CONFIG
 ; ==============================================================
 
-MOVE_WEDGE_0500
+MOVE_WEDGE_LOW
   ldx #<MY_WEDGE_LO                     ; store the new dest address lo-byte
   ldy #>MY_WEDGE_LO                     ; store the new dest address hi-byte $516
 
@@ -2117,7 +2336,7 @@ SetVicAs24K:                            ; set vic as 24k expanded
 
 dir_unexpand:       ;@@@
   sta dir_screen_mem_page               ; Screen memory page start (hi-byte)
-  lda dir_start_memory_hi
+;  lda dir_start_memory_hi
   stx dir_start_memory_hi               ; Start of memory (hi-byte)
   sty dir_top_memory_hi                 ; Top of memory (hi-byte)
 
@@ -2311,6 +2530,60 @@ _relo5002 = . +1
   lda #8
   sta F_CURDEV
   rts
+
+
+
+; ==============================================================
+; RELOCATOR TABLE
+; ==============================================================
+
+;  org $be00
+
+
+RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
+  dc.w _relo0000
+  dc.w _relo0001,_relo0002;,_relo0003
+  dc.w _relo0010,_relo0011,_relo0012,_relo0013,_relo0014,_relo0015,_relo0016
+  dc.w _relo0020,_relo0021,_relo0022,_relo0023,_relo0024,_relo0025,_relo0026
+  dc.w _relo0030,_relo0031,_relo0032,_relo0033,_relo0034,_relo0035,_relo0036,_relo0037,_relo0038,_relo0039
+  dc.w _relo0040,_relo0041,_relo0042
+  dc.w _relo0050
+  dc.w _relo0060,_relo0061
+  dc.w           _relo0071,_relo0072
+  dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
+  dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
+  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
+  dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
+  dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
+  dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
+  dc.w _relo0140,_relo0141,_relo0142,_relo0143,_relo0144
+  dc.w _relo0150,_relo0151
+  dc.w _relo0160
+  dc.w _relo0170,_relo0171,_relo0172,_relo0173,_relo0174,_relo0175
+  dc.w _relo0180,_relo0181,_relo0182,          _relo0184,_relo0185,_relo0186,_relo0187,_relo0188,_relo0189
+  dc.w _relo0200,_relo0201
+  dc.w _relo0211,_relo0212
+  dc.w _relo0220,_relo0221,_relo0222
+  dc.w _relo0230,_relo0231
+  dc.w _relo0250,_relo0251
+  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
+  dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
+  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
+  dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
+  dc.w _relo0360,_relo0361
+  dc.w _relo0400,_relo0401,_relo0402,_relo0403,_relo0404,_relo0405,_relo0406,_relo0407,_relo0408,_relo0409
+  dc.w _relo0410;,_relo0411,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
+  dc.w 0
+
+  dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
+  dc.w _relo5000,_relo5001,_relo5002,_relo5003
+  dc.w _relo5010,_relo5011,_relo5012,_relo5013
+  dc.w _relo5070
+  dc.w _relo5090,_relo5091
+  dc.w _relo5230
+  dc.w _relo5250
+  dc.w 0
+  dc.b 0
 
 
 
@@ -3043,16 +3316,29 @@ _relo0094 = . +1
 MY_SAVE
   ldx SY_DN                             ; PA (device#)
   cpx #4
-  bcs MYSA_0
+  bcs MY_IECSAVE
   jmp $f685                             ; OLD LOAD PROC
 
 
-;MY_IECVERIFY
-;  lda #1
-;  bne MYLO_0
-
 MY_IECSAVE
-;  lda #0
+  jsr FRMWORD2                          ; GET WORD VALUE
+  bcs MYSA_0
+
+  sty LOADSTART
+  sta LOADSTART +1
+
+  jsr FRMWORD2                          ; GET WORD VALUE
+  bcs MYSA_0
+
+  sty LOADEND
+  sta LOADEND +1
+
+  ldy LOADSTART
+  lda LOADSTART +1
+  sty SAVESTART
+  sta SAVESTART +1
+
+
 MYSA_0
   lda #$f1                              ; channel
 _relo0400 = . +1
@@ -4574,58 +4860,6 @@ WEDGEMESSAGE1c
 
 
 
-
-; ==============================================================
-; RELOCATOR TABLE
-; ==============================================================
-
-;  org $be00
-
-
-RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
-  dc.w _relo0000
-  dc.w _relo0001,_relo0002;,_relo0003
-  dc.w _relo0010,_relo0011,_relo0012,_relo0013,_relo0014,_relo0015,_relo0016
-  dc.w _relo0020,_relo0021,_relo0022,_relo0023,_relo0024,_relo0025,_relo0026
-  dc.w _relo0030,_relo0031,_relo0032,_relo0033,_relo0034,_relo0035,_relo0036,_relo0037,_relo0038,_relo0039
-  dc.w _relo0040,_relo0041,_relo0042
-  dc.w _relo0050
-  dc.w _relo0060,_relo0061
-  dc.w           _relo0071,_relo0072
-  dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
-  dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
-  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
-  dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
-  dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
-  dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
-  dc.w _relo0140,_relo0141,_relo0142,_relo0143,_relo0144
-  dc.w _relo0150,_relo0151
-  dc.w _relo0160
-  dc.w _relo0170,_relo0171,_relo0172,_relo0173,_relo0174,_relo0175
-  dc.w _relo0180,_relo0181,_relo0182,          _relo0184,_relo0185,_relo0186,_relo0187,_relo0188,_relo0189
-  dc.w _relo0200,_relo0201
-  dc.w _relo0211,_relo0212
-  dc.w _relo0220,_relo0221,_relo0222
-  dc.w _relo0230,_relo0231
-  dc.w _relo0250,_relo0251
-  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
-  dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
-  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
-  dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
-  dc.w _relo0360,_relo0361
-  dc.w _relo0400,_relo0401,_relo0402,_relo0403,_relo0404,_relo0405,_relo0406,_relo0407,_relo0408,_relo0409
-  dc.w _relo0410;,_relo0411,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
-  dc.w 0
-
-  dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
-  dc.w _relo5000,_relo5001,_relo5002,_relo5003
-  dc.w _relo5010,_relo5011,_relo5012,_relo5013
-  dc.w _relo5070
-  dc.w _relo5090,_relo5091
-  dc.w _relo5230
-  dc.w _relo5250
-  dc.w 0
-  dc.b 0
 
 
 MY_WEDGE_END
