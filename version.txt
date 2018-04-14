@@ -2,6 +2,17 @@ FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -lli
 
 
 
+R020:
+
++ bugfix: BLKD now works as designed
+
++ bugfix: Diskloader is improved and works fine with cassettebuffer demos (thanks to "Kratznagel")
+
++ New feature for FE3 wedge: SAVE works also with key <left arrow>.
+
+  For files already existing you can choose "update" (two versions) or "replace".
+
+                                                                                
 
 
 R019a:

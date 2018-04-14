@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 019a
+; VIC 20 Final Expansion Cartridge - Revision 020
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -26,7 +26,7 @@ F_END       = CAS_BUF +5
 ;------------------------------
 
 
-FLGCOM  = $08
+FLGCOM  = $08                                                                   
 
 
 CHRPTR  = $7a                           ;Char Pointer
@@ -242,7 +242,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R019A", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R020 ", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -374,6 +374,269 @@ THECREDITS
   dc.b $00
 
 
+MSG_EXISTS
+  dc.b CR,RVSON,"A",RVSOFF,"BORT ",RVSON,"R",RVSOFF,"EPLACE ",RVSON,"U",RVSOFF,"PDATE ",CR,0
+
+
+
+
+
+; ==============================================================
+; ROM $6 FUNCTIONS
+; ==============================================================
+
+EXEC_SAVE     = 0
+EXEC_LOADER   = 1
+
+
+DO_EXECUTE subroutine
+  tax
+  bne .1
+  jmp RPROC_SAVE
+
+.1
+  dex
+  bne .2
+  jmp RPROC_LOADER
+
+.2
+  rts
+
+
+
+
+; ==============================================================
+; PROC AFTER "FILE EXISTS"
+; ==============================================================
+
+CH_OLDFILE = 39                        ; '
+;CH_OLDFILE = 36                         ; $
+
+
+RPROC_SAVE subroutine
+  lda STP
+  cmp #"6"
+  bne .rts
+  lda STP +1
+  cmp #"3"
+  bne .rts
+
+  lda #<MSG_EXISTS
+  ldy #>MSG_EXISTS
+  jsr STROUT
+
+.key
+  jsr WAIT_KEY
+  cmp #"A"
+  beq .rts
+  cmp #"R"
+  beq .replace
+  cmp #"U"
+  beq .update
+  bne .key
+
+.err
+  ;jsr PRINT_DISK_ERR
+  jsr GET_DISK_STAT
+  jsr PRINT_BIP_0
+.rts
+  clc
+  rts
+
+
+.replace
+  lda #<MSG_DEL_FILE
+  ldy #>MSG_DEL_FILE
+  jsr SY_STROUT
+.repl2
+  jsr START_DISK_SCRATCH
+  bcs .err
+  jsr IECNAMOUT_2
+
+.okul
+  jsr UNLISTEN
+  sec
+  rts
+
+
+.update
+  lda #<MSG_DEL_OLDFILE
+  ldy #>MSG_DEL_OLDFILE
+  jsr SY_STROUT
+
+  jsr START_DISK_SCRATCH
+  bcs .err
+  lda #CH_OLDFILE
+  jsr IECOUT
+  jsr IECNAMOUT_2
+  jsr UNLISTEN
+
+  lda #<MSG_RENAME_FILE
+  ldy #>MSG_RENAME_FILE
+  jsr SY_STROUT
+
+  jsr START_DISK_RENAME
+  bcs .err
+  lda #CH_OLDFILE
+  jsr IECOUT
+  jsr IECNAMOUT_2
+  lda #"="
+  jsr IECOUT
+  jsr IECNAMOUT_2
+  jmp .okul
+
+
+
+
+MSG_DEL_FILE
+  dc.b "DELETING FILE ...",13,0
+MSG_DEL_OLDFILE
+  dc.b "DELETING OLD FILE ...",13,0
+MSG_RENAME_FILE
+  dc.b "RENAMING FILE ...",13,0
+
+
+
+
+; ==============================================================
+; DISK COMMANDS RENAME AND SCRATCH
+; ==============================================================
+
+
+START_DISK_SCRATCH
+  lda #"S"
+  bne START_DISK_CMD
+
+START_DISK_RENAME
+  lda #"R"
+
+START_DISK_CMD subroutine
+  pha
+  jsr DISK_LISTEN_6F
+  lda IECSTAT
+  bmi .err
+
+  pla
+  jsr IECOUT
+  lda #":"
+  jsr IECOUT
+  clc
+  rts
+
+.err
+  jsr UNLISTEN
+  pla
+  sec
+  rts
+
+
+
+
+; =====================================================================
+; MENU LOADER
+; Schaltet in ROM Modus und lädt 1 oder mehrere Dateien in den Speicher
+; Lade Instruktionen stehen in der Tabelle DL_LDBUF
+; =====================================================================
+
+RPROC_LOADER  subroutine
+  ;LOADER PARAM       :: "filename",B|P|C [,$adress]     B=BASIC Code,P=Program,C=Cartridge
+  jsr SET_PT2_LDBUF
+
+  ldx DL_CNTLDR
+.2
+  txa
+  pha
+  jsr PRINT_LOADMSG                     ;SET LOAD INFO, PRINT MESSAGE
+  jsr GET_FILETYP
+  cpx #"B"
+  bne .3
+
+  jsr LOAD_BASIC_2
+  jmp .4
+
+.3
+  jsr MY_IECLOAD
+.4
+  bcs .ERR
+
+  jsr ADD_PT2_LDBUF                     ;NEXT LDBUF
+
+  pla
+  tax
+  dex
+  bne .2
+
+.E
+  jsr PRINT_IO
+  clc
+  rts
+
+.ERR
+  pla
+  jmp LOAD_ERR
+
+
+
+
+  ;PRINT LOAD MESSAGE
+PRINT_LOADMSG subroutine
+  ldy #LDBUF_LAD
+  lda (PT2),y                             ; LOAD ADR LOW
+  sta LOADPTR
+  iny
+  lda (PT2),y                             ; LOAD ADR HIGH
+  sta LOADPTR +1
+  beq .2B
+
+  lda #$ff
+.2B
+  tay                                     ; SA
+  iny
+  lda #1
+  ldx F_CURDEV                          ; device#
+  jsr SETFNUM
+
+  jsr GET_FILETYP
+  cpx #"B"
+  bne .3B
+
+  jsr PRINT_LOADING
+  dc.b "LOAD BASIC PROG",0
+  jmp LOAD_BASIC_START
+
+.3B
+  cpx #"C"
+  bne .3C
+
+  lda LOADPTR +1
+  bne .3B2
+  lda #$a0                                ;DEFAULT CARTRIDGE ADDRESS
+  sta LOADPTR +1
+.3B2
+  ldy #2
+  sty SY_SA
+  jsr PRINT_LOADING
+  dc.b "LOAD CART",0
+  rts
+
+.3C
+  jsr PRINT_LOADING
+  dc.b "LOAD PROG",0
+  rts
+
+GET_FILETYP subroutine
+  ldy #LDBUF_TYP
+  lda (PT2),y
+  tax
+  rts
+
+
+
+
+
+; ==============================================================
+; END :: ROM $6 FUNCTIONS
+; ==============================================================
 
 
   rend
@@ -611,13 +874,30 @@ SETUPTIMEOUT
 ; ==============================================================
 
 STROUT_R subroutine
+  jsr SET_ROM
+  jsr STROUT
+  jmp SET_BACK
+
+; ==============================================================
+; EXECUTE FUNCTION IN ROM    in AC
+; ==============================================================
+
+EXECUTE_R subroutine
+  jsr SET_ROM
+  jsr DO_EXECUTE
+
+SET_BACK
+  lda 2
+  sta IO_FINAL
+  rts
+
+SET_ROM
   pha
+  lda IO_FINAL
+  sta 2
   lda #FEMOD_ROM
   sta IO_FINAL
   pla
-  jsr STROUT
-  lda #FEMOD_RAM_1 +$10                 ;RAM MODUS, BLK-5 PROTECTED
-  sta IO_FINAL
   rts
 
 
@@ -1763,7 +2043,7 @@ MESE_EXEC subroutine
 
   lda #FEMOD_ROM
   sta IO_FINAL                          ; EEPROM!
-  jsr LOADER                            ; LOAD FILES
+  jsr DO_LOADER                         ; LOAD FILES
   bcs .err
 
 EXEC_PACKAGE
@@ -2150,139 +2430,16 @@ SELO_E
 
 
 
+
 ; =====================================================================
 ; MENU LOADER
 ; Schaltet in ROM Modus und lädt 1 oder mehrere Dateien in den Speicher
 ; Lade Instruktionen stehen in der Tabelle DL_LDBUF
 ; =====================================================================
 
-LOADER  subroutine
-  ;LOADER PARAM       :: "filename",B|P|C [,$adress]     B=BASIC Code,P=Program,C=Cartridge
-  jsr SET_PT2_LDBUF
-
-.2
-  jsr PRINT_LOADMSG                     ;SET LOAD INFO, PRINT MESSAGE
-  jsr GET_FILETYP
-  cpx #"B"
-  bne .3
-
-  jsr LOAD_BASIC_2
-  jmp .4
-
-.3
-  jsr MY_IECLOAD
-.4
-  bcs .ERR
-
-  jsr ADD_PT2_LDBUF                     ;NEXT LDBUF
-
-  dec DL_CNTLDR
-  bne .2
-.E
-  jsr PRINT_IO
-  clc
-  rts
-
-.ERR
-LOAD_ERR
-  jsr PRINT_LOADERR
-  jsr WAITSPACE
-  sec
-  rts
-
-
-
-
-  ;PRINT LOAD MESSAGE
-PRINT_LOADMSG subroutine
-  ldy #LDBUF_LAD
-  lda (PT2),y                             ; LOAD ADR LOW
-  sta LOADPTR
-  iny
-  lda (PT2),y                             ; LOAD ADR HIGH
-  sta LOADPTR +1
-  beq .2B
-
-  lda #$ff
-.2B
-  tay                                     ; SA
-  iny
-  lda #1
-  ldx F_CURDEV                          ; device#
-  jsr SETFNUM
-
-  jsr GET_FILETYP
-  cpx #"B"
-  bne .3B
-
-  jsr PRINT_LOADING
-  dc.b "LOAD BASIC PROG",0
-  jmp LOAD_BASIC_START
-
-.3B
-  cpx #"C"
-  bne .3C
-
-  lda LOADPTR +1
-  bne .3B2
-  lda #$a0                                ;DEFAULT CARTRIDGE ADDRESS
-  sta LOADPTR +1
-.3B2
-  ldy #2
-  sty SY_SA
-  jsr PRINT_LOADING
-  dc.b "LOAD CART",0
-  rts
-
-.3C
-  jsr PRINT_LOADING
-  dc.b "LOAD PROG",0
-  rts
-
-GET_FILETYP subroutine
-  ldy #LDBUF_TYP
-  lda (PT2),y
-  tax
-  rts
-
-
-
-
-  ;NEXT LOAD HEADER
-ADD_PT2_LDBUF subroutine
-  clc
-  lda #LDBUF_END
-  adc PT2
-  sta PT2
-  bcc .0
-  inc PT2 +1
-.0
-  rts
-
-
-  ;PRINT LOAD MESSAGE, GET FILENAME
-PRINT_LOADING subroutine
-  jsr SPAR_GETPTR
-  jsr SPAR_PRINTSTRING_2
-
-  jsr SPAR_PRINTSTRING
-  dc.b CR, "  ",60,0
-
-  ldy #LDBUF_LEN
-  lda (PT2),y                             ; FILENAME LEN
-  ldy PT2 +1
-  ldx PT2
-  inx
-  bne .2
-  iny
-.2
-  jsr SETFNAM                           ;SET FILENAME
-  jsr STRNOUT                           ;PRINT FILENAME
-
-  lda #62                               ;">"
-  ldx #CR
-  jmp CHROUT2
-
+DO_LOADER  subroutine
+  lda #EXEC_LOADER
+  jmp EXECUTE_R
 
 
 
@@ -2702,7 +2859,48 @@ FLSH_LOADER subroutine
   rts
 
 .err
-  jmp LOAD_ERR
+LOAD_ERR
+  jsr PRINT_LOADERR
+  jsr WAITSPACE
+  sec
+  rts
+
+
+
+  ;NEXT LOAD HEADER
+ADD_PT2_LDBUF subroutine
+  clc
+  lda #LDBUF_END
+  adc PT2
+  sta PT2
+  bcc .0
+  inc PT2 +1
+.0
+  rts
+
+
+  ;PRINT LOAD MESSAGE, GET FILENAME
+PRINT_LOADING subroutine
+  jsr SPAR_GETPTR
+  jsr SPAR_PRINTSTRING_2
+
+  jsr SPAR_PRINTSTRING
+  dc.b CR, "  ",60,0
+
+  ldy #LDBUF_LEN
+  lda (PT2),y                             ; FILENAME LEN
+  ldy PT2 +1
+  ldx PT2
+  inx
+  bne .2
+  iny
+.2
+  jsr SETFNAM                           ;SET FILENAME
+  jsr STRNOUT                           ;PRINT FILENAME
+
+  lda #62                               ;">"
+  ldx #CR
+  jmp CHROUT2
 
 
 
@@ -2944,11 +3142,16 @@ MENU_CLOADER subroutine
   lda #FEMOD_ROM
   sta IO_FINAL                          ; EEPROM!
 
+  lda DL_CNTLDR
 .loadfile
+  pha
   jsr READ_LDBUF                        ;RESTORE FILE LOAD BUFFER
   jsr READ_FILE                         ;READ FILE FROM RAMDISK
-
-  dec DL_CNTLDR
+  pla
+  tax
+  dex
+  txa
+  ;dec DL_CNTLDR
   bne .loadfile
 
   jsr PRINT_IO                          ;PRINT IO SETTING
@@ -3484,6 +3687,7 @@ SET_MEM_CONFIG SUBROUTINE
 ;  jsr CLROUT                            ;CLEAR SCREEN
   lda BIP_IOBASE
   sta IO_FINAL
+  ora BIP_IOBASE +1
 
 SetVicMemConfig  subroutine
   tax
@@ -3546,6 +3750,66 @@ dir_unexpand:       ;@@@
 ;Pad to end to create valid cart image
 ;  org $afff
 ;  dc.b #$00
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; ==============================================================
+; MY BIG WEDGE (ROM only)
+; ==============================================================
+
+ROM_INPLOOP subroutine
+  cmp #95                               ; SAVE? (left arrow)
+  beq DO_SAVE
+  tax
+  pla
+  pla
+  txa
+  jmp RAM_INPUT_LOOP
+
+
+DO_SAVE subroutine
+  ldx F_CURDEV                          ; device#
+  lda #$01                              ; lfn #01
+  tay
+  jsr SETLFS
+  jsr GET_FILENAM
+  ;jmp $e156
+
+.1
+  ldx BASVAR
+  ldy BASVAR +1
+  lda #BASSTRT
+  jsr $ffd8
+  bcs .2
+  rts
+  ;jmp CROUT
+
+.2
+  lda #EXEC_SAVE
+  jsr EXECUTE_R
+  bcs .1
+
+.rts
+  rts
+
+  ;jmp MY_IECSAVE
+
 
 
   ;jmp MY_WDGE_START
@@ -3716,7 +3980,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0030,_relo0031,_relo0032                                        ,_relo0037,_relo0038,_relo0039
   dc.w _relo0040,_relo0041,_relo0042
   dc.w _relo0050
-  dc.w _relo0060,_relo0061
+  dc.w _relo0060,_relo0061,_relo0062
   dc.w                     _relo0072
   dc.w _relo0080,_relo0081,_relo0082          ,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088;,_relo0089
   dc.w _relo0090,_relo0091,          _relo0093,_relo0094,_relo0095          ,_relo0097,_relo0098
@@ -3762,11 +4026,20 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
 ; MY INPUT LOOP
 ; ==============================================================
 
-INLO_1
+
+INLO_1 subroutine
+  ldx PTR_INPUT_LOOP +1                 ; CODE IN ROM?
+  cpx #>INPUT_LOOP
+  bne .10
+  jsr ROM_INPLOOP
+  jmp INPUT_LOOP
+
+.10
+RAM_INPUT_LOOP
 _relo0001 = . +1
   jsr INLO_LOOP2
 
-INPUT_LOOP
+INPUT_LOOP subroutine
   jsr $c560                             ; INPUT LINE
   stx CHRPTR
   sty CHRPTR +1
@@ -3814,8 +4087,7 @@ INLO_LOOP2
   beq DO_LOADBIN
   cmp #">"                              ; VERIFY BINARY?
   beq DO_VERIFY
-  ;cmp #95                               ; SAVE? (left arrow)
-  ;beq DO_SAVE
+
 
 _relo0002 = . +1
   jsr TOKENIZER
@@ -4174,7 +4446,7 @@ INC_CHRPTR
 ; GET LOAD PARAM
 ; ==============================================================
 
-GET_LOADPAR
+GET_FILENAM
   lda BIP +1
   cmp #34
   beq GELO_2
@@ -4185,7 +4457,11 @@ GET_LOADPAR
   inc CHRPTR
 GELO_2
 _relo0060 = . +1
-  jsr GET_STRING
+  jmp GET_STRING
+
+GET_LOADPAR
+_relo0062 = . +1
+  jsr GET_FILENAM
 _relo0061 = . +1
   jsr FRMWORD2                          ; GET WORD VALUE
   bcs GELO_5
@@ -4690,7 +4966,7 @@ _relo0400 = . +1
   jsr DISK_LISTEN
 _relo0401 = . +1
   jsr IECNAMOUT
-  bcs MYSA_ERR
+  bcs .err
 
   lda #$61
 _relo0402 = . +1
@@ -4740,8 +5016,10 @@ _relo0410 = . +1
   jsr PRINT_TOADR_2
 _relo0411 = . +1
   jsr PRINT_DISK_ERR
-  clc
-MYSA_ERR
+  beq .rts
+.err
+  sec
+.rts
   rts
 
 
@@ -4792,6 +5070,9 @@ _relo0305 = . +1
   dex
   bne DICM_2
   rts
+
+
+
 
 
   ;CHECK 'DEVICE NOT PRESENT'
@@ -5579,7 +5860,7 @@ _relo0222 = . +1
 ; TOKENIZER                   X=Token#, 0=no token found
 ; ==============================================================
 
-TOKENIZER
+TOKENIZER subroutine
   jsr CHRGOT
 _relo5230 = . +1
   lda #<TOKEN
