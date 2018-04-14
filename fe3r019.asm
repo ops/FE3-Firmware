@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 018A
+; VIC 20 Final Expansion Cartridge - Revision 019
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -73,6 +73,7 @@ SY_SA       = $b9
 SY_DN       = $ba
 SY_FN       = $b8
 
+DIRECT_MODE = $9d                       ;Direct=$80/RUN=0
 
 
 CHRGET  = $0073                         ;GET NEXT CHAR
@@ -241,7 +242,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R018a", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R019 ", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -431,6 +432,8 @@ JMP_TABLE
   jmp HELP2                             ; sys 41000: Help sreen
   jmp MY_WEDGE_INIT                     ; sys 41003: Init Wedge
   jmp MOVE_WEDGE_LOW                    ; sys 41006: Copy Wedge to low mem
+  jmp SET_BASE_VECTORS                  ; sys 41009: Set Base vectors
+
 
   ; COPY FIRMWARE FROM EEPROM TO SRAM
 COPYROM subroutine
@@ -660,6 +663,7 @@ STARTWEDGE
 
 STARTWEDGE1
   jsr SY_INITMSG                        ; INIT Message
+  jsr SET_BASE_VECTORS                  ; Set Base vectors
 
 STARTWEDGE2
 
@@ -2332,8 +2336,8 @@ LOAD_BASIC_START subroutine
 SYS_IECOPEN = $f495
 SYS_TALK    = $ee14
 SYS_TALKSA  = $eece
-SYS_LOAD2   = $f58a
-SYS_LOAD2C  = $f5a3
+;SYS_LOAD2   = $f58a
+;SYS_LOAD2C  = $f5a3
 SYS_SETADR  = $e4c1
 
 
@@ -3013,7 +3017,7 @@ READ_FILE subroutine
   sta LOADPTR +1
   sty LOADPTR                           ;LOAD ADDRESS FROM FILE
 .0
-  ldx #LOADPTR
+  lda #LOADPTR
   jsr PRINT_ATADR_2                     ;PRINT LOADING FROM $xxxx
   ldy #0
 .1
@@ -3032,7 +3036,7 @@ READ_FILE subroutine
   bne .1
 
 .le
-  ldx #LOADPTR
+  lda #LOADPTR
   jsr PRINT_TOADR_2                     ;PRINT TO $xxxx
 
   ldx LOADPTR
@@ -3704,18 +3708,18 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0001,_relo0002;,_relo0003
   dc.w _relo0010,_relo0011,_relo0012,_relo0013,_relo0014,_relo0015,_relo0016
   dc.w _relo0020,_relo0021,_relo0022,_relo0023,_relo0024,_relo0025,_relo0026
-  dc.w _relo0030,_relo0031,_relo0032,_relo0033,_relo0034,_relo0035,_relo0036,_relo0037,_relo0038,_relo0039
+  dc.w _relo0030,_relo0031,_relo0032                                        ,_relo0037,_relo0038,_relo0039
   dc.w _relo0040,_relo0041,_relo0042
   dc.w _relo0050
   dc.w _relo0060,_relo0061
-  dc.w           _relo0071,_relo0072
-  dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
-  dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
+  dc.w                     _relo0072
+  dc.w _relo0080,_relo0081,_relo0082          ,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088;,_relo0089
+  dc.w           _relo0091,          _relo0093,_relo0094,_relo0095          ,_relo0097,_relo0098
   dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104,_relo0105,_relo0106
   dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
   dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
   dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
-  dc.w _relo0140,_relo0141,_relo0142,_relo0143,_relo0144
+  dc.w           _relo0141,_relo0142;,_relo0143,_relo0144
   dc.w _relo0150,_relo0151
   dc.w _relo0160
   dc.w _relo0170,_relo0171,_relo0172,_relo0173,_relo0174,_relo0175
@@ -3725,7 +3729,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0220,_relo0221,_relo0222
   dc.w _relo0230,_relo0231
   dc.w _relo0250,_relo0251
-  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
+  dc.w _relo0300,                    _relo0303,          _relo0305,_relo0306,_relo0307,_relo0308,_relo0309
   dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
   dc.w _relo0320          ,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
   dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
@@ -3733,6 +3737,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0400,_relo0401,_relo0402,_relo0403,_relo0404,_relo0405,_relo0406,_relo0407,_relo0408,_relo0409
   dc.w _relo0410,_relo0411,_relo0412;,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
   dc.w _relo0420,_relo0421;,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
+  dc.w _relo0430;,_relo0431;,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
   dc.w 0
 
   dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
@@ -3881,7 +3886,7 @@ _relo0020 = . +1
   jsr GET_LOADPAR
   pla
 _relo0021 = . +1
-  jsr MYLO_0
+  jsr MY_IECLOAD_0
   bcs DOLO_ERR
 
   lda SY_VERIFY
@@ -3969,13 +3974,13 @@ INLO_OFF
 _relo5010 = . +1
   lda #<WEDGEMESSAGE1b
   ldy #>WEDGEMESSAGE1b
-_relo0033 = . +1
-  jsr STROUT
+;_relo0033 = . +1
+  jsr SY_STROUT
 _relo5011 = . +1
   lda #<WEDGEMESSAGE1c
   ldy #>WEDGEMESSAGE1c
-_relo0034 = . +1
-  jsr STROUT
+;_relo0034 = . +1
+  jsr SY_STROUT
   jsr $e45b                             ;INIT BASIC VECTORS
   jsr $ff8a                             ;INIT IO VECTORS
   jmp $c480                             ;STD. INPUT LOOP
@@ -3993,8 +3998,8 @@ INLO_NOIO3
 _relo5012 = . +1
   lda #<MSG_NOIO
   ldy #>MSG_NOIO
-_relo0035 = . +1
-  jmp STROUT
+;_relo0035 = . +1
+  jmp SY_STROUT
 
 
 
@@ -4023,8 +4028,8 @@ PRINT_IO
 _relo5013 = . +1
   lda #<MSG_PRINTIO
   ldy #>MSG_PRINTIO
-_relo0036 = . +1
-  jsr STROUT
+;_relo0036 = . +1
+  jsr SY_STROUT
   ldx BIP_IOBASE
   lda #0
 _relo0037 = . +1
@@ -4220,8 +4225,8 @@ PRINT_DEV
 _relo5070 = . +1
   lda #<MSG_DEVICE
   ldy #>MSG_DEVICE
-_relo0071 = . +1
-  jsr STROUT
+;_relo0071 = . +1
+  jsr SY_STROUT
 
   ldx F_CURDEV
   lda #0
@@ -4270,10 +4275,10 @@ CNVWORD  = $d7f7	                ; CONVERT TO WORD VALUE INTO Y/A; $14 (PT3)
 
 
   ; LOAD VECTOR                         :: "fnam",PA,SA[,loadadr]
-MY_LOAD
+MY_LOAD  subroutine
   ldx SY_DN                             ; PA (device#)
   cpx #4
-  bcs MYLO_0
+  bcs .0
   jmp $f549                             ; OLD LOAD PROC
 
 
@@ -4283,7 +4288,8 @@ MY_LOAD
 
 MY_IECLOAD
   lda #0
-MYLO_0
+MY_IECLOAD_0
+.0
   sta SY_VERIFY
   lda #0
   sta SY_FN                             ; file# - flag for first byte
@@ -4293,107 +4299,115 @@ _relo0080 = . +1
   jsr DISK_LISTEN
 _relo0081 = . +1
   jsr IECNAMOUT
-  bcc MYLO_00a
-MYLO_ERR2
+  bcc .00a
+;MYLO_ERR2
   rts
 
-MYLO_00a
+.00a
+  LDY #$00
+  LDA ($BB),Y                           ;Filename
+  CMP #$24                              ;"$"
+  BNE .00b                              ;Directory? -->
+  jmp $f56d                             ;normal LOAD
+
+
+.00b
   lda #$60
 _relo0082 = . +1
   jsr DISK_TALK
 
-  ldx SY_SA                             ; SA
-  beq MYLO_00                           ; SA=0: LOAD AT $c3
-
-  dex
-  dex
-  beq MYLO_02
 
 
-MYLO_01                                 ; SA=1: LOAD AT FILE-ADR
-_relo0083 = . +1
-  jsr MY_IECIN
-  bcs MYLO_ERR
-
-  tax                                   ; load address lo
-_relo0301 = . +1
-  jsr IECIN                             ; load address hi
-  clv
-  bvc MYLO_2
-
-
-MYLO_00                                 ; SA=0: LOAD AT $c3
 _relo0084 = . +1
-  jsr MY_IECIN
-  bcs MYLO_ERR
+  jsr IECIN                             ; load address lo
+  sta LOADEND
 
+  lda SY_STATUS
+  lsr
+  lsr
+  bcc .00c
+  jmp $f787
+
+.00c
 _relo0300 = . +1
-  jsr IECIN                             ; skip load address
+  jsr IECIN                             ; load address hi
+  sta LOADEND +1
 
-MYLO_02                                 ; SA=2: LOAD CARTRIDGE AT $c3
+  ldx SY_SA                             ; SA
+  beq .00                               ; SA=0 -->
+
+  dex
+  dex
+  bne .01                               ; SA=1 -->
+
+.02                                     ; SA=2: LOAD CARTRIDGE AT $c3
+  pha
+  lda LOADEND
+  pha                                   ; FIRST TWO BYTES ...
+
+.00                                     ; SA=0: LOAD PROGRAM AT $c3
 _relo0085 = . +1
   jsr FRMWORD2                          ; GET WORD VALUE
   lda LOADPTR +1
   ldx LOADPTR
-  bcs MYLO_2
+  bcs .2
 
   lda PT3 +1
   ldx PT3
 
-MYLO_2
+.2
   sta LOADEND +1
   stx LOADEND
 
+
+
+.01
 _relo0086 = . +1
   jsr PRINT_ATADR
 
-_relo0087 = . +1
-  jsr MY_IECIN
-  bcc MYLO_6
 
-MYLO_ERR
-_relo0302 = . +1
-  jsr DISK_CLOSE_LO
-  jmp $f787
+  ldx SY_SA                             ; SA
+  dex
+  dex
+  bne .3                                ; SA!=2 -->
 
-
-MYLO_5
-  jsr CHKSTOP
-  bne MYLO_05a
-
-_relo0088 = . +1
-  jsr DISK_CLOSE_LO
-  jmp $f6ce
-
-
-MYLO_05a
-_relo0089 = . +1
-  jsr MY_IECIN2
-MYLO_6
-  ldy SY_VERIFY
-  beq MYLO_7                            ; --> load
-
+  ;STORE FIRST TWO BYTES
   ldy #0
-  cmp (LOADEND),y
-  beq MYLO_8
+  pla
+_relo0097 = . +1
+  jsr STOREBYTE
+  pla
+_relo0098 = . +1
+  jsr STOREBYTE
 
-  lda #$10
-  jsr SETSTAT
-  .byte $2c
-MYLO_7
-  sta (LOADEND),y
-MYLO_8
-  inc LOADEND
-  bne MYLO_7a
-  inc LOADEND +1
-MYLO_7a
-  bit SY_STATUS
-  bvc MYLO_5                            ; EOI?
+.3
 
-MYLO_E
-_relo0090 = . +1
-  jsr DISK_CLOSE_LO
 
+
+;_relo0087 = . +1
+;  jsr MY_IECIN
+;  bcc MYLO_6
+
+;MYLO_ERR
+;_relo0302 = . +1
+;  jsr DISK_CLOSE_LO
+;  jmp $f787
+
+
+;--------------JIFFY FASTLOAD INIT
+.FASTLOAD
+  BIT $A3
+;  BVC .F253                             ;no Jiffy -->
+  BVS .FB1F                             ;Jiffy -->
+.F253
+  JSR $F58A                             ;normales LOAD
+.err2
+  bcs .err
+
+;_relo0090 = . +1
+;  jsr DISK_CLOSE_LO
+
+.MYLO_E
 _relo0091 = . +1
   jsr PRINT_TOADR
 
@@ -4411,52 +4425,193 @@ _relo0412 = . +1
   rts
 
 
+;--------------JIFFY FASTLOAD INIT
+.FB1F
+_relo0087 = . +1
+  JSR UNTALK                            ;UNTALK
+  lda #$61
+_relo0088 = . +1
+  jsr DISK_TALK
+;--------------JIFFY FASTLOAD
+  SEI
+  LDA $B2
+  PHA
+  LDY #$00
+.FB25
+  JSR $F755                             ;STOP Taste abfragen
+  CMP #$FE
+  BEQ .FB5B
+  LDA $912C
+  AND #$DD
+  TAX
+  ORA #$20
+  STA $B2
+  STX $912C
+  LDA #$80
+  STA $9C
+.FB3D
+  LDA $911F
+  LSR
+  BCC .FB3D
+  AND #$01
+  BEQ .FB67
+  LDX #$6D
+.FB49
+  BIT $911F
+  BEQ .FB54
+  DEX
+  BNE .FB49
+  LDA #$42
+  .byte $2c                             ;BIT ABS
+.FB54
+  LDA #$40
+  JSR $FE6A                             ;SET STATUS
+  CLC
+  .byte $24                             ;BIT ZP
+.FB5B                                   ;STOP!
+  SEC
+  PLA
+  STA $B2
+  bcc .MYLO_E
+.err
+  JMP $F6CB                             ;UNLISTEN, CLOSE, BREAK
+; JMP $F5BF                             ;UNLISTEN, CLOSE
 
 
-  ; GET BYTE FROM IEC, CHECK STATUS
-MY_IECIN2
-_relo0304 = . +1
-  jsr IECIN
+.FB67
+  LDA #$02
+.FB69
+  BIT $911F
+  BEQ .FB69
+.FB6E
+  PHA
+  PLA
+  NOP
+  LDA $B2
+  STA $912C
+  LDA #$01
+  BIT $911F
+  BEQ .FB25
+  STX $912C
+  LDA $911F
+  ROR
+  ROR
+  NOP
+  AND #$80
+  ORA $911F
+  ROL
+  ROL
+  NOP
+  STA $B3
+  LDA $911F
+  ROR
+  ROR
+  AND $9C
+  ORA $911F
+  ROL
+  ROL
+  STA $C0
+
+;_relo0430 = . +1
+;  JSR lEC4E                            ;Byte zusammenbauen aus 2 Nibble
+;_relo0089 = . +1
+;  jsr STOREBYTE
+;  CLV
+;  BVC .FB6E
+
+  lda #>(.FB6E -1)                      ;Rücksprungadresse auf Stack
   pha
-  lda SY_STATUS
-  lsr
-  lsr
-  bcc MYIE_4                            ; timeout --> no
+  lda #<(.FB6E -1)
+  pha
+_relo0430 = . +1
+  JSR lEC4E                             ;Byte zusammenbauen aus 2 Nibble
 
-  lda SY_FN                             ; file# - flag for first byte
-  beq MYIE_4                            ; first byte --> error
-
-  pla
-  lda #$fd
-  and SY_STATUS
-  sta SY_STATUS
-  jsr CHKSTOP
-  bne MY_IECIN2
-  sec
+STOREBYTE subroutine
+  CPY $93
+  BNE .FBB0
+  STA ($AE),Y
+.FBA7
+  INC $AE
+  BNE .FB6E
+  INC $AF
+.FB6E
   rts
 
-MY_IECIN
-_relo0092 = . +1
-  jsr MY_IECIN2
-  pha
-  lda #1
-  sta SY_FN
-MYIE_4
-  pla
-  rts
+.FBB0                                   ;VERIFY
+  CMP ($AE),Y
+  BEQ .FBA7
+  LDA #$10                              ;VERIFY ERROR
+  STA $90
+  BNE .FBA7
+
+
+
+;--------------JIFFY FASTLOAD
+
+
+
+
+
+
+
+
+
+;.MYLO_5
+;  jsr CHKSTOP
+;  bne MYLO_05a
+
+;_relo0088 = . +1
+;  jsr DISK_CLOSE_LO
+;  jmp $f6ce
+
+
+;.MYLO_05a
+;_relo0089 = . +1
+;  jsr MY_IECIN2
+;.MYLO_6
+;  ldy SY_VERIFY
+;  beq MYLO_7                            ; --> load
+
+;  ldy #0
+;  cmp (LOADEND),y
+;  beq MYLO_8
+
+;  lda #$10
+;  jsr SETSTAT
+;  .byte $2c
+;.MYLO_7
+;  sta (LOADEND),y
+;.MYLO_8
+;  inc LOADEND
+;  bne MYLO_7a
+;  inc LOADEND +1
+;.MYLO_7a
+;  bit SY_STATUS
+;  bvc MYLO_5                            ; EOI?
+
+
 
 
 
   ; PRINT LOAD AT ADDRESS
-PRINT_ATADR
-  ldx #LOADEND
+PRINT_ATADR subroutine
+  lda #LOADEND
 PRINT_ATADR_2
+  ldx DIRECT_MODE
+  bmi .1
+.rts
+  rts
+
+.1
+  pha
 _relo5090 = . +1
   lda #<MSG_LOADAT
   ldy #>MSG_LOADAT
-PRAT_1
-_relo0096 = . +1
-  jsr STROUT
+;_relo0096 = . +1
+  jsr SY_STROUT
+  pla
+.3
+  tax
 HEXOUT_ZP
   lda 1,x
   pha
@@ -4468,13 +4623,19 @@ _relo0095 = . +1
 
   ; PRINT LOAD AT ADDRESS
 PRINT_TOADR
-  ldx #LOADEND
+  lda #LOADEND
 PRINT_TOADR_2
+  ldx DIRECT_MODE
+  bpl .rts
+
+  pha
 _relo5091 = . +1
   lda #<MSG_LOADTO
   ldy #>MSG_LOADTO
+  jsr SY_STROUT
+  pla
 _relo0093 = . +1
-  jsr PRAT_1
+  jsr .3
 _relo0094 = . +1
   jmp CROUT
 
@@ -4490,7 +4651,7 @@ _relo0094 = . +1
 ; ========================================================================
 
   ; SAVE VECTOR                         :: "fnam",PA,SA[,fromadr,toaddr]
-MY_SAVE
+MY_SAVE subroutine
   ldx SY_DN                             ; PA (device#)
   cpx #4
   bcs MY_IECSAVE
@@ -4539,7 +4700,7 @@ _relo0403 = . +1
 _relo0404 = . +1
   jsr IECOUT
 
-  ldx #LOADSTART
+  lda #LOADSTART
   jsr PRINT_ATADR_2
 
   ldy #0
@@ -4569,7 +4730,7 @@ _relo0408 = . +1
   jsr UNLISTEN
 _relo0409 = . +1
   jsr DISK_CLOSE_SA
-  ldx #LOADSTART
+  lda #LOADSTART
 _relo0410 = . +1
   jsr PRINT_TOADR_2
 _relo0411 = . +1
@@ -4963,72 +5124,6 @@ PRCA_SPCOL
   bcs PRCA_SP_1
   rts
 
-
-
-; ==============================================================
-; DISPLAY STRING    in AC/YR
-; ==============================================================
-
-STROUT subroutine
-  sta PT1
-  sty PT1 +1
-  ldy #0
-  ;sty 658                              ;Scroll Flag
-  ;dey
-.1
-  lda (PT1),y
-  beq .E
-_relo0140 = . +1
-  jsr CHROUT
-  iny
-  bne .1
-.E
-  rts
-
-
-; ==============================================================
-; DISPLAY STRING AT POS   in AC/YR
-; ==============================================================
-
-STR_AT
-  sta PT1
-  sty PT1 +1
-  ldy #0
-  lda (PT1),y
-  tax
-  iny
-  lda (PT1),y
-  tay
-_relo0143 = . +1
-  jsr SET_CURSOR
-  ldy #2
-  bne .1
-
-
-; ==============================================================
-; DELETE LINE      XR=Row
-; ==============================================================
-
-DEL_LINE
-  ldy #0
-_relo0144 = . +1
-  jsr SET_CURSOR
-  ldy #21
-  lda #32
-DELI_2
-  sta (C_LINE),y
-  dey
-  bpl DELI_2
-  rts
-
-
-; ==============================================================
-; SET CURSO POS          XR=Row, YR=Col
-; ==============================================================
-
-SET_CURSOR
-  clc
-  jmp CURSOR_POS
 
 
 ; ==============================================================
@@ -6015,8 +6110,6 @@ _relo0360 = . +1
 
 
 
-
-
 ;--------------JIFFY DATA TABLE
 lFCCE
   .byte $00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22
@@ -6088,7 +6181,10 @@ MSG_DEVICE
 MSG_PRINTIO
   dc.b "IO=",0
 MSG_NOIO
-  dc.b "IO DISABLED",13,0
+  dc.b "IO OFF",13,0
+
+
+MY_WEDGE_END
 
 
 
@@ -6101,7 +6197,185 @@ WEDGEMESSAGE1c
 
 
 
-MY_WEDGE_END
+
+
+
+
+
+
+; ==============================================================
+; JIFFY IO CODE (CHKIN, CHKOUT, BASIN, BSOUT)   from SJLOAD-128
+; ==============================================================
+
+PTR_CHKIN       = $031e
+PTR_CHKOUT      = $0320
+PTR_BASIN       = $0324
+PTR_CLRCH       = $0322
+PTR_BASOUT      = $0326
+PTR_GETIN       = $032a
+PTR_CLRALL      = $032c
+
+;-------------------- WEDGE INIT
+SET_BASE_VECTORS
+  lda #<JChkIn
+  ldx #>JChkIn
+  sta PTR_CHKIN
+  stx PTR_CHKIN +1
+  lda #<JChkOut
+  ldx #>JChkOut
+  sta PTR_CHKOUT
+  stx PTR_CHKOUT +1
+  lda #<JBasIn
+  ldx #>JBasIn
+  sta PTR_BASIN
+  stx PTR_BASIN +1
+  lda #<JBasOut
+  ldx #>JBasOut
+  sta PTR_BASOUT
+  stx PTR_BASOUT +1
+  lda #<JGetIn
+  ldx #>JGetIn
+  sta PTR_GETIN
+  stx PTR_GETIN +1
+  lda #<JClrCh
+  ldx #>JClrCh
+  sta PTR_CLRCH
+  stx PTR_CLRCH +1
+  lda #<JClrAll
+  ldx #>JClrAll
+  sta PTR_CLRALL
+  stx PTR_CLRALL +1
+  rts
+
+
+
+
+;
+; JIFFY CHKIN    ($031e vector)
+;
+JChkIn subroutine
+  jsr $f3cf                             ;search logical file#
+  beq .1	                        ;file not open error
+  jmp $f784                             ;err "file not open"
+
+.1
+  jsr $f3df                             ;set file param
+  lda SY_DN                             ;device#
+  cmp #8
+  bcs .2
+  jmp $f2d2                             ;std. ChkIn
+
+.2
+  tax
+  jsr TALK
+  lda SY_SA
+  bpl .3
+  jmp $f2f8
+
+.3
+  jsr TALKSA
+  jmp $f301
+
+
+
+
+
+;
+; JIFFY CHKOUT    ($0320 vector)
+;
+JChkOut subroutine
+  jsr $f3cf                             ;search logical file#
+  beq .1	                        ;file not open error
+  jmp $f784                             ;err "file not open"
+
+.1
+  jsr $f3df                             ;set file param
+  lda SY_DN                             ;device#
+  cmp #8
+  bcs .2
+  jmp $f314                             ;std. ChkOut
+
+.2
+  tax
+  jsr LISTEN
+  lda SY_SA
+  bpl .3
+  jmp $f33a
+
+.3
+  jsr LISTENSA
+  jmp $f342
+
+
+
+
+;
+; JIFFY GETIN    ($032a vector)
+;
+JGetIn subroutine
+  lda $99                               ;device#
+  cmp #8
+  bcs .2
+  jmp $f1f5                             ;std. GetIn
+
+
+
+;
+; JIFFY BASIN    ($0324 vector)
+;
+JBasIn
+  lda $99                               ;device#
+  cmp #8
+  bcs .2
+  jmp $f20e                             ;std. BasIn
+
+.2
+  lda SY_STATUS
+  beq .3
+  jmp $f268                             ;std. IECIN
+
+.3
+  jmp JIF_IECIN
+
+
+
+
+;
+; JIFFY BASOUT    ($0326 vector)
+;
+JBasOut subroutine
+  pha
+  lda $9a                               ;device#
+  cmp #8
+  bcs .2
+  jmp $f27b                             ;std. BasOut
+
+.2
+  pla
+  jmp JIF_IECOUT
+
+
+
+;
+; JIFFY CLRCH / CLRALL    ($0322 / $032c vector)
+;
+JClrAll subroutine
+  lda #0
+  sta $98
+
+JClrCh
+  ldx #3
+  cpx $9a                               ;device# out
+  bcs .1
+  jsr JIF_UNLISTEN
+.1
+  cpx $99                               ;device# in
+  bcs .2
+  jsr JIF_UNTALK
+.2
+  jmp $f403                             ;std. ClrAll
+
+
 
 
 
@@ -6608,6 +6882,72 @@ FLASH_FW_END
 
 
 
+
+; ==============================================================
+; DISPLAY STRING    in AC/YR
+; ==============================================================
+
+STROUT subroutine
+  sta PT1
+  sty PT1 +1
+  ldy #0
+  ;sty 658                              ;Scroll Flag
+  ;dey
+.1
+  lda (PT1),y
+  beq .E
+;_relo0140 = . +1
+  jsr CHROUT
+  iny
+  bne .1
+.E
+  rts
+
+
+
+; ==============================================================
+; DISPLAY STRING AT POS   in AC/YR
+; ==============================================================
+
+STR_AT
+  sta PT1
+  sty PT1 +1
+  ldy #0
+  lda (PT1),y
+  tax
+  iny
+  lda (PT1),y
+  tay
+;_relo0143 = . +1
+  jsr SET_CURSOR
+  ldy #2
+  bne .1
+
+
+; ==============================================================
+; DELETE LINE      XR=Row
+; ==============================================================
+
+DEL_LINE
+  ldy #0
+;_relo0144 = . +1
+  jsr SET_CURSOR
+  ldy #21
+  lda #32
+DELI_2
+  sta (C_LINE),y
+  dey
+  bpl DELI_2
+  rts
+
+
+; ==============================================================
+; SET CURSO POS          XR=Row, YR=Col
+; ==============================================================
+
+SET_CURSOR
+  clc
+  jmp CURSOR_POS
 
 
 
