@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 011
+; VIC 20 Final Expansion Cartridge - Revision 012
 ; Thomas Winkler - May 3, 2009
 
 ; Thanks to Leif Bloomquist
@@ -47,8 +47,10 @@ BASSTR  = $33                           ;BASIC STRINGS
 STRPTR  = $35                           ;STRING POINTER
 BASEND  = $37                           ;BASIC END
 
-LOADPTR = $c3
-LOADEND = $ae
+SAVESTART = $c1
+LOADPTR   = $c3
+LOADSTART = $ac
+LOADEND   = $ae
 
 KEYANZ  = $c6
 
@@ -934,7 +936,7 @@ HELPSCREEN3
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R011", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R012", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
   dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
@@ -2160,19 +2162,19 @@ THECREDITS
 
   ;jmp MY_WDGE_START
 
+MY_WEDGE_START
+
+
 
 ; ==============================================================
 ; RELOCATOR
 ; ==============================================================
-MY_WEDGE_START
 
 STACK           = $0100
 
 
 SY_TIMOUTFLG = $ffa2
 SY_GETSTATUS = $ffb7
-
-
 
 
 MY_RELOCATOR
@@ -2202,7 +2204,12 @@ _relo0000 = . +1
   beq RELO_E                            ;RELOCATION NOT NESSECARY
 
 
-  lda #(RELO_TAB - _relo)
+RELO_0
+  clc
+  lda #>(RELO_TAB - _relo)
+  adc PT1 +1                            ;RELO_TAB POINTER HI
+  sta PT1 +1
+  lda #<(RELO_TAB - _relo)
   ldx #1
 RELO_2
   stx FLGCOM
@@ -2257,54 +2264,9 @@ RELO_3c
   lda #2
   bne RELO_3
 
-
 RELO_E
-_relo0003 = . +1
-  jmp MY_WEDGE_INIT
-
-
-RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
-  dc.w _relo0000
-  dc.w _relo0001,_relo0002,_relo0003
-  dc.w _relo0010,_relo0011,_relo0012,_relo0013,_relo0014,_relo0015,_relo0016
-  dc.w _relo0020,_relo0021,_relo0022,_relo0023,_relo0024,_relo0025,_relo0026
-  dc.w _relo0030,_relo0031,_relo0032,_relo0033,_relo0034,_relo0035,_relo0036,_relo0037,_relo0038,_relo0039
-  dc.w _relo0040,_relo0041,_relo0042
-  dc.w _relo0050
-  dc.w _relo0060,_relo0061
-  dc.w           _relo0071,_relo0072
-  dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
-  dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
-  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
-  dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
-  dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
-  dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
-  dc.w _relo0140,_relo0141,_relo0142,_relo0143,_relo0144
-  dc.w _relo0150,_relo0151
-  dc.w _relo0160
-  dc.w _relo0170,_relo0171,_relo0172,_relo0173,_relo0174,_relo0175
-  dc.w _relo0180,_relo0181,_relo0182,          _relo0184,_relo0185,_relo0186,_relo0187,_relo0188,_relo0189
-  dc.w _relo0200,_relo0201
-  dc.w _relo0211,_relo0212
-  dc.w _relo0220,_relo0221,_relo0222
-  dc.w _relo0230,_relo0231
-  dc.w _relo0250,_relo0251
-  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
-  dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
-  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
-  dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
-  dc.w _relo0360,_relo0361
-  dc.w 0
-
-  dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
-  dc.w _relo5000,_relo5001,_relo5002
-  dc.w _relo5010,_relo5011,_relo5012,_relo5013
-  dc.w _relo5070
-  dc.w _relo5090,_relo5091
-  dc.w _relo5230
-  dc.w _relo5250
-  dc.w 0
-  dc.b 0
+;_relo0003 = . +1
+;  jmp MY_WEDGE_INIT
 
 
 
@@ -2316,6 +2278,7 @@ PTR_ERROR_OUT   = $0300
 PTR_INPUT_LOOP  = $0302
 PTR_FRMELEM     = $030a
 PTR_LOAD        = $0330
+PTR_SAVE        = $0332
 
 ;-------------------- WEDGE INIT
 MY_WEDGE_INIT
@@ -2329,6 +2292,11 @@ _relo5001 = . +1
   ldx #>MY_LOAD
   sta PTR_LOAD
   stx PTR_LOAD +1
+_relo5003 = . +1
+  lda #<MY_SAVE
+  ldx #>MY_SAVE
+  sta PTR_SAVE
+  stx PTR_SAVE +1
 _relo5002 = . +1
   lda #<MY_FRMELEM
   ldx #>MY_FRMELEM
@@ -2363,6 +2331,29 @@ INPUT_LOOP
 
 
 
+
+
+DOLO_ERR
+_relo0024 = . +1
+  jsr PRINT_DISK_ERR
+  sec
+  rts
+
+
+
+
+BASLOAD_END
+  bcs DOLO_ERR
+BASLOAD_END_2
+  stx BASVAR
+  sty BASVAR +1
+  jsr PGMLINK
+DOLO_E
+  clc                                   ; LOAD OK
+  rts
+
+
+
 INLO_LOOP2
   cmp #"$"                              ; CATALOG?
   beq DO_CATALOG
@@ -2370,8 +2361,10 @@ INLO_LOOP2
   beq DO_DISKCMD
   cmp #"/"                              ; LOAD BASIC?
   beq DO_LOADBAS
-  cmp #"%"                              ; LOAD BASIC?
+  cmp #"%"                              ; LOAD BINARY?
   beq DO_LOADBIN
+  cmp #">"                              ; VERIFY BINARY?
+  beq DO_VERIFY
   ;cmp #95                               ; SAVE? (left arrow)
   ;beq DO_SAVE
   cmp #"#"                              ; DEVICE?
@@ -2421,6 +2414,12 @@ _relo0016 = . +1
 
 
   ;LOAD BASIC OR ABSOLUTE (/)
+DO_VERIFY
+  ldy #$1                               ; SA=1
+  tya
+  bne DOLO_2
+
+  ;LOAD BASIC OR ABSOLUTE (/)
 DO_LOADBAS
   ldx BASSTRT
   lda BASSTRT +1
@@ -2431,17 +2430,26 @@ DO_LOADBAS
 
   ;LOAD BINARY OR CARTRIDGE (%)
 DO_LOADBIN
-  ldy #$1                               ; SA=0
+  ldy #$1                               ; SA=1
 DOLO_1
+  lda #0                                ; LOAD
+DOLO_2
+  pha
   ldx F_CURDEV                          ; device#
   lda #$01                              ; lfn #01
   jsr SETLFS
 _relo0020 = . +1
   jsr GET_LOADPAR
+  pla
 _relo0021 = . +1
-  jsr MY_IECLOAD
+  jsr MYLO_0
   bcs DOLO_ERR
 
+  lda SY_VERIFY
+  beq MYLO_1
+  jmp $e17b                             ;verify error?
+
+MYLO_1
   lda SY_SA                             ; SA=0
   bne DOLO_E
 
@@ -2450,24 +2458,6 @@ _relo0022 = . +1
   jsr BASCLR2
 _relo0023 = . +1
   jmp INPUT_LOOP
-
-DOLO_ERR
-_relo0024 = . +1
-  jsr PRINT_DISK_ERR
-  sec
-  rts
-
-
-BASLOAD_END
-  bcs DOLO_ERR
-BASLOAD_END_2
-  stx BASVAR
-  sty BASVAR +1
-  jsr PGMLINK
-DOLO_E
-  clc                                   ; LOAD OK
-  rts
-
 
 
 
@@ -2508,6 +2498,8 @@ INLO_LOOP2b
   lda #0
   sta CHRPTR                            ;RESET CHRPTR TO START OF BIP
   beq INLO_LOOP2a
+
+
 
 
 
@@ -2643,6 +2635,7 @@ SEBL_E
 
 
 
+
 ; ==============================================================
 ; UNNEW (OLD) BASIC PROGRAM
 ; ==============================================================
@@ -2678,6 +2671,8 @@ DO_UNNEW
 
 
 GET_STRING
+  lda F_CURDEV                          ; device
+  sta SY_DN                             ; prime address
   jsr CHRGET
   tay
   beq GEST_5
@@ -2843,9 +2838,9 @@ MY_LOAD
   jmp $f549                             ; OLD LOAD PROC
 
 
-MY_IECVERIFY
-  lda #1
-  bne MYLO_0
+;MY_IECVERIFY
+;  lda #1
+;  bne MYLO_0
 
 MY_IECLOAD
   lda #0
@@ -2934,7 +2929,7 @@ MYLO_6
 
   lda #$10
   jsr SETSTAT
-
+  .byte $2c
 MYLO_7
   sta (LOADEND),y
 MYLO_8
@@ -2998,20 +2993,27 @@ MYIE_4
 
   ; PRINT LOAD AT ADDRESS
 PRINT_ATADR
+  ldx #LOADEND
+PRINT_ATADR_2
 _relo5090 = . +1
   lda #<MSG_LOADAT
   ldy #>MSG_LOADAT
-
 PRAT_1
 _relo0096 = . +1
   jsr STROUT
-  ldx LOADEND
-  lda LOADEND +1
+HEXOUT_ZP
+  lda 1,x
+  pha
+  lda 0,x
+  tax
+  pla
 _relo0095 = . +1
   jmp HEXOUT
 
   ; PRINT LOAD AT ADDRESS
 PRINT_TOADR
+  ldx #LOADEND
+PRINT_TOADR_2
 _relo5091 = . +1
   lda #<MSG_LOADTO
   ldy #>MSG_LOADTO
@@ -3019,6 +3021,88 @@ _relo0093 = . +1
   jsr PRAT_1
 _relo0094 = . +1
   jmp CROUT
+
+
+
+; ========================================================================
+; MY SAVE                   ENDADDR   = ($AE/$AF)    STARTADDR = ($C1/$C2)
+;
+; SAVESTART = $c1
+; LOADPTR   = $c3
+; LOADSTART = $ac
+; LOADEND   = $ae
+; ========================================================================
+
+  ; SAVE VECTOR                         :: "fnam",PA,SA[,fromadr,toaddr]
+MY_SAVE
+  ldx SY_DN                             ; PA (device#)
+  cpx #4
+  bcs MYSA_0
+  jmp $f685                             ; OLD LOAD PROC
+
+
+;MY_IECVERIFY
+;  lda #1
+;  bne MYLO_0
+
+MY_IECSAVE
+;  lda #0
+MYSA_0
+  lda #$f1                              ; channel
+_relo0400 = . +1
+  jsr DISK_LISTEN
+_relo0401 = . +1
+  jsr IECNAMOUT
+
+  lda #$61
+_relo0402 = . +1
+  jsr DISK_LISTEN
+
+  jsr $fbd2                             ; $C1/$C2 --> $ac/$ad
+
+  lda LOADSTART
+_relo0403 = . +1
+  jsr IECOUT
+  lda LOADSTART +1
+_relo0404 = . +1
+  jsr IECOUT
+
+  ldx #LOADSTART
+  jsr PRINT_ATADR_2
+
+  ldy #0
+MYSA_00
+  jsr $fd11                             ;END ADDRESS?
+  bcs MYLO_E0                           ;YES -->
+  lda (LOADSTART),y
+_relo0405 = . +1
+  jsr IECOUT
+
+  jsr CHKSTOP
+  bne MYSA_02
+
+_relo0406 = . +1
+  jsr UNLISTEN
+_relo0407 = . +1
+  jsr DISK_CLOSE_SA
+  jmp $f6ce
+
+
+MYSA_02
+  jsr $fd1b                             ;INCR ADDR
+  bne MYSA_00
+
+MYLO_E0
+_relo0408 = . +1
+  jsr UNLISTEN
+_relo0409 = . +1
+  jsr DISK_CLOSE_SA
+_relo0410 = . +1
+  ldx #LOADSTART
+  jsr PRINT_TOADR_2
+  clc
+  rts
+
 
 
 
@@ -3057,8 +3141,12 @@ DISK_LISTEN
   pha
   lda #0
   sta IECSTAT
+  beq DILI_2
 
-  lda F_CURDEV                          ; device#
+DISK_LISTEN_2
+  pha
+DILI_2
+  lda SY_DN                             ; device#
 _relo0307 = . +1
   jsr LISTEN
   pla
@@ -3071,7 +3159,7 @@ DISK_TALK
   lda #0
   sta IECSTAT
 
-  lda F_CURDEV                          ; device#
+  lda SY_DN                             ; device#
 _relo0309 = . +1
   jsr TALK
   pla
@@ -3079,10 +3167,15 @@ _relo0310 = . +1
   jmp TALKSA
 
 
+DISK_CLOSE_SA
+  lda #$e1
+  bne DICL_1
+
 DISK_CLOSE
   lda #$e0
+DICL_1
 _relo0101 = . +1
-  jsr DISK_LISTEN
+  jsr DISK_LISTEN_2
 _relo0311 = . +1
   jmp UNLISTEN
 
@@ -4475,7 +4568,63 @@ WEDGEMESSAGE1c
 
 
 
+
+; ==============================================================
+; RELOCATOR TABLE
+; ==============================================================
+
+  org $be00
+
+
+RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
+  dc.w _relo0000
+  dc.w _relo0001,_relo0002;,_relo0003
+  dc.w _relo0010,_relo0011,_relo0012,_relo0013,_relo0014,_relo0015,_relo0016
+  dc.w _relo0020,_relo0021,_relo0022,_relo0023,_relo0024,_relo0025,_relo0026
+  dc.w _relo0030,_relo0031,_relo0032,_relo0033,_relo0034,_relo0035,_relo0036,_relo0037,_relo0038,_relo0039
+  dc.w _relo0040,_relo0041,_relo0042
+  dc.w _relo0050
+  dc.w _relo0060,_relo0061
+  dc.w           _relo0071,_relo0072
+  dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
+  dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
+  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
+  dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
+  dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
+  dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
+  dc.w _relo0140,_relo0141,_relo0142,_relo0143,_relo0144
+  dc.w _relo0150,_relo0151
+  dc.w _relo0160
+  dc.w _relo0170,_relo0171,_relo0172,_relo0173,_relo0174,_relo0175
+  dc.w _relo0180,_relo0181,_relo0182,          _relo0184,_relo0185,_relo0186,_relo0187,_relo0188,_relo0189
+  dc.w _relo0200,_relo0201
+  dc.w _relo0211,_relo0212
+  dc.w _relo0220,_relo0221,_relo0222
+  dc.w _relo0230,_relo0231
+  dc.w _relo0250,_relo0251
+  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
+  dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
+  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
+  dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
+  dc.w _relo0360,_relo0361
+  dc.w _relo0400,_relo0401,_relo0402,_relo0403,_relo0404,_relo0405,_relo0406,_relo0407,_relo0408,_relo0409
+  dc.w _relo0410;,_relo0411,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
+  dc.w 0
+
+  dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
+  dc.w _relo5000,_relo5001,_relo5002,_relo5003
+  dc.w _relo5010,_relo5011,_relo5012,_relo5013
+  dc.w _relo5070
+  dc.w _relo5090,_relo5091
+  dc.w _relo5230
+  dc.w _relo5250
+  dc.w 0
+  dc.b 0
+
+
 MY_WEDGE_END
+
+
 
 
   org $bfff
