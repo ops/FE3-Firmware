@@ -1,16 +1,16 @@
-; VIC 20 Final Expansion Cartridge - Revision 010
+; VIC 20 Final Expansion Cartridge - Revision 011
 ; Thomas Winkler - May 3, 2009
 
 ; Thanks to Leif Bloomquist
 ; Thanks to everyone on the Denial forums
 ; http://www.sleepingelephant.com/denial/
 
-  processor 6502                         ;VIC20
+  processor 6502                        ;VIC20
 
 
 
 
-MY_WEDGE_LO = $0500
+MY_WEDGE_LO = $0400                     ;WEDGE LOW ADDRESS
 
 
 F_IO     = 1000                         ;IO FLAG
@@ -934,7 +934,7 @@ HELPSCREEN3
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R010", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R011", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
   dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
@@ -2215,10 +2215,10 @@ RELO_3
 RELO_3a
   ldy #0
   lda (PT1),y
-  iny
-  tax
   bne RELO_3c
 
+  tax
+  iny
   lda (PT1),y
   bne RELO_3b
 
@@ -2231,13 +2231,17 @@ RELO_3a
   bne RELO_2
 
 RELO_3b
+  dey
   txa
 RELO_3c
   clc
   adc PT2
+  sta (PT1),y
   sta LOADPTR                           ;MODIFY ADDRESS LO
+  iny
   lda (PT1),y
   adc PT2 +1
+  sta (PT1),y
   sta LOADPTR +1                        ;MODIFY ADDRESS HI
 
   dey
@@ -2268,7 +2272,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0040,_relo0041,_relo0042
   dc.w _relo0050
   dc.w _relo0060,_relo0061
-  dc.w _relo0070,_relo0071,_relo0072
+  dc.w           _relo0071,_relo0072
   dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
   dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
   dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
@@ -2285,6 +2289,11 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0220,_relo0221,_relo0222
   dc.w _relo0230,_relo0231
   dc.w _relo0250,_relo0251
+  dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
+  dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
+  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
+  dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
+  dc.w _relo0360,_relo0361
   dc.w 0
 
   dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
@@ -2761,7 +2770,8 @@ SET_DEVICE
   jsr CHRGET
   beq PRINT_DEV
 
-_relo0070 = . +1
+;_relo0070 = . +1
+
   jsr FRMBYTE
   cpx #4
   bcc SEDE_2
@@ -2793,18 +2803,26 @@ _relo0072 = . +1
 ; SYS PROCS
 ; ==============================================================
 
-UNLISTEN = $ffae	                ; send UNLISTEN command
-LISTEN	 = $ffb1	                ; send LISTEN command
-LISTENSA = $ff93	                ; send SA for LISTEN command
-TALK     = $ffb4	                ; send TALK command
-UNTALK   = $ffab	                ; send UNTALK command
-TALKSA   = $ff96	                ; send SA for TALK command
-IECIN    = $ffa5	                ; get char from IEC
-IECOUT   = $ffa8	                ; send char to IEC
-SETSTAT  = $fe6a	                ; set status
+;UNLISTEN = $ffae	                ; send UNLISTEN command
+;LISTEN	 = $ffb1	                ; send LISTEN command
+;LISTENSA = $ff93	                ; send SA for LISTEN command
+;TALK     = $ffb4	                ; send TALK command
+;UNTALK   = $ffab	                ; send UNTALK command
+;TALKSA   = $ff96	                ; send SA for TALK command
+;IECIN    = $ffa5	                ; get char from IEC
+;IECOUT   = $ffa8	                ; send char to IEC
 
+SETSTAT  = $fe6a	                ; set status
 CHKSTOP  = $ffe1                        ; check stop key
 
+LISTEN	 = JIF_LISTEN                   ; send LISTEN command
+TALK     = JIF_TALK	                ; send TALK command
+LISTENSA = JIF_LISTENSA                 ; send SA for LISTEN command
+TALKSA   = JIF_TALKSA	                ; send SA for TALK command
+UNLISTEN = JIF_UNLISTEN	                ; send UNLISTEN command
+UNTALK   = JIF_UNTALK	                ; send UNTALK command
+IECIN    = JIF_IECIN	                ; get char from IEC
+IECOUT   = JIF_IECOUT	                ; send char to IEC
 
 
 
@@ -2860,6 +2878,7 @@ _relo0083 = . +1
   bcs MYLO_ERR
 
   tax                                   ; load address lo
+_relo0301 = . +1
   jsr IECIN                             ; load address hi
   clv
   bvc MYLO_2
@@ -2870,6 +2889,7 @@ _relo0084 = . +1
   jsr MY_IECIN
   bcs MYLO_ERR
 
+_relo0300 = . +1
   jsr IECIN                             ; skip load address
 
 MYLO_02                                 ; SA=2: LOAD CARTRIDGE AT $c3
@@ -2894,6 +2914,7 @@ _relo0087 = . +1
   bcc MYLO_6
 
 MYLO_ERR
+_relo0302 = . +1
   jsr UNTALK
 _relo0088 = . +1
   jsr DISK_CLOSE
@@ -2925,6 +2946,7 @@ MYLO_7a
   bvc MYLO_5                            ; EOI?
 
 MYLO_E
+_relo0303 = . +1
   jsr UNTALK
 _relo0090 = . +1
   jsr DISK_CLOSE
@@ -2942,6 +2964,7 @@ _relo0091 = . +1
 
   ; GET BYTE FROM IEC, CHECK STATUS
 MY_IECIN2
+_relo0304 = . +1
   jsr IECIN
   pha
   lda SY_STATUS
@@ -3020,11 +3043,13 @@ IECNAMOUT
   ldy #0
 DICM_2
   lda (PTR_FNAM),y
+_relo0305 = . +1
   jsr IECOUT
   iny
   dex
   bne DICM_2
 DICM_ERR
+_relo0306 = . +1
   jmp UNLISTEN
 
 
@@ -3034,8 +3059,10 @@ DISK_LISTEN
   sta IECSTAT
 
   lda F_CURDEV                          ; device#
+_relo0307 = . +1
   jsr LISTEN
   pla
+_relo0308 = . +1
   jmp LISTENSA
 
 
@@ -3045,8 +3072,10 @@ DISK_TALK
   sta IECSTAT
 
   lda F_CURDEV                          ; device#
+_relo0309 = . +1
   jsr TALK
   pla
+_relo0310 = . +1
   jmp TALKSA
 
 
@@ -3054,6 +3083,7 @@ DISK_CLOSE
   lda #$e0
 _relo0101 = . +1
   jsr DISK_LISTEN
+_relo0311 = . +1
   jmp UNLISTEN
 
 
@@ -3099,12 +3129,14 @@ _relo0104 = . +1
 
   ldy #0
 DIST_2
+_relo0312 = . +1
   jsr IECIN
   sta BIP,y
   iny
   lda IECSTAT
   beq DIST_2
 
+_relo0313 = . +1
   jsr UNTALK
   tya
   beq DIST_7
@@ -3140,6 +3172,7 @@ PRINT_CATALOG
 _relo0110 = . +1
   jsr DISK_LISTEN
   lda #"$"
+_relo0314 = . +1
   jsr IECOUT
 _relo0111 = . +1
   jsr IECNAMOUT
@@ -3163,6 +3196,7 @@ _relo0114 = . +1
 
 _relo0115 = . +1
   jsr CHROUT                            ; here on first row only (Disk Name)
+_relo0315 = . +1
   jsr IECIN                             ; skip a char (")
 
 _relo0116 = . +1
@@ -3176,6 +3210,7 @@ _relo0118 = . +1
 
 _relo0119 = . +1
   jsr CHROUT                            ; ID1
+_relo0316 = . +1
   jsr IECIN
 _relo0120 = . +1
   jsr CHROUT                            ; ID2
@@ -3183,6 +3218,7 @@ _relo0120 = . +1
 ;PRINT STD. LINE (FILE)
 
 PRCA_4
+_relo0317 = . +1
   jsr IECIN
   tax
   bne PRCA_4
@@ -3206,9 +3242,11 @@ _relo0121 = . +1
   lda IECSTAT
   bne PRCA_E
 
+_relo0318 = . +1
   jsr IECIN
   tax                                   ;LO
   ;sta PT3
+_relo0319 = . +1
   jsr IECIN
   ;ldx PT3
   jsr PRNINT                            ;print integer in X/A
@@ -3246,6 +3284,7 @@ _relo0128 = . +1
 PRCA_9
 _relo0129 = . +1
   jsr CHROUT                            ;
+_relo0320 = . +1
   jsr IECIN
   tax
   bne PRCA_9
@@ -3255,6 +3294,7 @@ _relo0130 = . +1
   jsr CROUT                             ; CR
 PRCA_E
 PRCA_EE
+_relo0321 = . +1
   jsr UNTALK
 _relo0131 = . +1
   jmp DISK_CLOSE
@@ -3263,6 +3303,7 @@ _relo0131 = . +1
 
 ; SKIP SPACE
 PRCA_SKIPSPC
+_relo0322 = . +1
   jsr IECIN
   cmp #32                               ;spaces
   beq PRCA_SKIPSPC
@@ -3270,6 +3311,7 @@ PRCA_SKIPSPC
 
 ; SKIP X BYTES
 PRCA_SKIP_X
+_relo0323 = . +1
   jsr IECIN
   dex
   bne PRCA_SKIP_X
@@ -3282,6 +3324,7 @@ _relo0132 = . +1
 PRCA_QSTR2
   ldy #17
 PRCAQS_2
+_relo0324 = . +1
   jsr IECIN
 _relo0133 = . +1
   jsr CHROUT                            ; else print character in A
@@ -3422,7 +3465,7 @@ CHOU_3
 CHOU_4
   ldx $0286                         ;Farbcode
   jsr $eaa1                         ;Zeichen ausgeben
-  lda $d3 
+  lda $d3
   cmp #$15
   beq CHOU_5
   inc $d3
@@ -3944,36 +3987,422 @@ RESET_IO
 
 
 
-
-
-
 ; ==============================================================
-; MESSAGE TEXTE
+; JIFFY PROCS
 ; ==============================================================
 
+;--------------JIFFY LISTEN
+JIF_TALK
+  ORA #$40
+  .byte $2c
+JIF_LISTEN
+  ORA #$20
+  JSR $F160                             ;SET TIMER
+lEE1C
+  PHA
+  BIT $94
+  BPL l6E2B
+  SEC
+  ROR $A3
+_relo0361 = . +1
+  JSR lfc41                             ;NEW BYTE OUT
+  LSR $94
+  LSR $A3
+l6E2B
+  PLA
+  STA $95
 
-MSG_LOADERR
-  dc.b "LOAD ERROR",13,0
-MSG_LOADAT
-  dc.b " FROM ",0
-MSG_LOADTO
-  dc.b " TO ",0
+  ;JSR lF19A                            ;NEW DAV hi
+  SEI
+  LDA #$00
+  STA $A3
+  JSR $E4A0                             ;DAV hi
 
-MSG_DEVICE
-  dc.b "DEVICE#",0
+  CMP #$3F
+  BNE l6E38
+  JSR $EF84                             ;NDAC lo
+l6E38
+  LDA $911F
+  ORA #$80
+  STA $911F
+lEE40
+  JSR $EF8D                             ;PCR BIT 1 LÖSCHEN
+  JSR $E4A0
+  JSR $EF96
+  ;jmp $ee49                            ;ORIG BYTE OUT
+
+OLD_IECOUT
+  SEI
+  JSR $E4A0                             ;DAV lo
+  JSR $E4B2                             ;NRFD hi
+  LSR
+  BCS l6EB4                             ;err DEV NOT PRES
+
+  JSR $EF84                             ;NDAC lo
+  BIT $A3
+  BPL l6E66
+l6E5A
+  JSR $E4B2                             ;NRFD hi
+  LSR
+  BCC l6E5A
+l6E60
+  JSR $E4B2                             ;NRFD hi
+  LSR
+  BCS l6E60
+l6E66
+  JSR $E4B2                             ;NRFD hi
+  LSR
+  BCC l6E66
+  JSR $EF8D                             ;PCR BIT 1 LÖSCHEN
+
+  TXA
+  PHA
+  LDX #$08                              ;8 BIT
+
+l6E73
+  LDA $911F
+  AND #$02
+  BNE l6E7F
+  PLA
+  TAX
+  JMP $EEB7                             ;ERR TIMEOUT
+
+l6E7F
+  JSR $E4A0                             ;DAV hi
+  ROR $95
+  BCS l6E89
+  JSR $E4A9                             ;DAV lo
+l6E89
+  JSR $EF84                             ;NDAC lo
+  LDA $912C
+  AND #$DD
+  ORA #$02
+  PHP
+  PHA
+_relo0350 = . +1
+  JSR lF96E
+  PLA
+  PLP
+  DEX
+  BNE l6E73
+
+  PLA
+  TAX
+  jmp $EEA0
+;  NOP
+;lEEA5
+;  LDA #$04
+;  STA $9129
+;l6EA5
+;  LDA $912D
+;  AND #$20
+;  BNE l6EB7
+;  JSR $E4B2
+;  LSR
+;  BCS l6EA5
+;  CLI
+;  RTS
+
+l6EB4
+  jmp $eeb4                             ;err DEV NOT PRES
+
+l6EB7
+  jmp $eeb7                             ;err TIME OUT
 
 
-MSG_PRINTIO
-  dc.b "IO=",0
-MSG_NOIO
-  dc.b "IO DISABLED",13,0
+lF96E
+  STA $912C
+  BIT $911F
+  BPL lF997
+  CPX #$02
+  BNE lF997
+  LDA #$02
+  LDX #$20
+lF97E
+  BIT $911F
+  BEQ lF988
+  DEX
+  BNE lF97E
+  BEQ lF995
+lF988
+  BIT $911F
+  BEQ lF988
+  LDA $95
+  ROR
+  ROR
+  ORA #$40
+  STA $A3
+lF995
+  LDX #$02
+lF997
+  rts
 
 
 
-WEDGEMESSAGE1b
-  dc.b $11, RED, "FE3 WEDGE (", 0
-WEDGEMESSAGE1c
-  dc.b "OFF)",BLUE,13,0
+
+
+;--------------JIFFY BYTE IN
+JIF_IECIN
+lfbe0                                   ;NEW BYTE IN??
+  sei
+  bit $a3
+  bvs l7be5
+  LDA #$00
+  JMP $EF1C                             ;ORIG BYTE IN
+
+JIFFY_IN
+l7be5
+  LDA $911F
+  AND #$03
+  BEQ l7be5
+  LDA #$80
+  STA $9C
+  TXA
+  PHA
+  PHA
+  PLA
+  PHA
+  PLA
+  LDA $912C
+  AND #$DD
+  STA $912C
+  ORA #$20
+  TAX
+  BIT $9C
+  BIT $9C
+  BIT $9C
+  LDA $911F
+  ROR
+  ROR
+  NOP
+  AND #$80
+  ORA $911F
+  ROL
+  ROL
+  STA $B3
+  LDA $911F
+  ROR
+  ROR
+  AND #$80
+  NOP
+  ORA $911F
+  ROL
+  ROL
+  STA $C0
+  LDA $911F
+  STX $912C
+  STA $9C
+_relo0351 = . +1
+  JSR lEC4E                             ;BYTE AUS 2 NIBBLES
+
+  STA $A4
+  PLA
+  TAX
+  LDA $9C
+  ROR
+  ROR
+  BPL l7C54
+  BCC lfC4f
+  LDA #$42
+  JMP $EEB9                             ;ERR STATUS, UNLISTEN
+;--------------JIFFY BYTE IN
+
+
+;--------------JIFFY BYTE OUT
+JIF_IECOUT
+  BIT $94
+  BMI lEEED
+  SEC
+  ROR $94
+  BNE lEEF2
+lEEED
+  PHA
+_relo0352 = . +1
+  JSR NEW_IECOUT
+  PLA
+lEEF2
+  STA $95
+  CLC
+  RTS
+
+
+NEW_IECOUT
+lfc41                                   ;NEW BYTE OUT
+  sei
+  bit $a3
+  bvs lfc59
+  LDA $A3
+  CMP #$A0
+  BCS lfc59
+_relo0353 = . +1
+  JMP OLD_IECOUT
+  ;JMP $EE49                             ;ORIG BYTE OUT
+
+lfC4f
+  LDA #$40
+  JSR $FE6A                             ;SET STATUS
+l7C54
+  LDA $A4
+l7C56
+  CLI
+  CLC
+  RTS
+
+
+JIFFY_OUT
+lfc59                                   ;JIFFY BYTE OUT
+  TXA
+  PHA
+  LDA $95
+  LSR
+  LSR
+  LSR
+  LSR
+  TAX
+_relo0354 = . +1
+  LDA lFCCE,X
+  PHA
+  TXA
+  LSR
+  LSR
+  TAX
+_relo0355 = . +1
+  LDA lFCCE,X
+  STA $B3
+  LDA $95
+  AND #$0F
+  TAX
+  LDA #$02
+l7C76
+  BIT $911F
+  BEQ l7C76
+
+  LDA $912C
+  AND #$DD
+  STA $9C
+  PHA
+  PLA
+  PHA
+  PLA
+  NOP
+  NOP
+  NOP
+  STA $912C
+  PLA
+  ORA $9C
+  NOP
+  STA $912C
+  LDA $B3
+  ORA $9C
+  ORA $9C
+  STA $912C
+_relo0356 = . +1
+  LDA lFBBA,X
+  ORA $9C
+  NOP
+  STA $912C
+_relo0357 = . +1
+  LDA lF39E,X
+  ORA $9C
+  NOP
+  STA $912C
+  NOP
+  AND #$DD
+  BIT $A3
+  BMI l7CB7
+  ORA #$02
+l7CB7
+  STA $912C
+  PLA
+  TAX
+  NOP
+  LDA $9C
+  ORA #$02
+  STA $912C
+  LDA $911F
+  AND #$02
+  BEQ l7C56
+  JMP $EEB7                             ; err TIME OUT
+;--------------JIFFY BYTE OUT
+
+
+
+;--------------BAUT EIN BYTE AUS 2 NIBBLES ZUSAMMEN
+lEC4E
+  LDA $B3
+  AND #$0F
+  STA $B3
+  LDA $C0
+  ASL
+  ASL
+  ASL
+  ASL
+  ORA $B3
+  RTS
+;--------------JIFFY BYTE IN
+
+
+
+;--------------JIFFY UNTALK/UNLISTEN
+JIF_UNTALK
+lEEF6
+  LDA $911F
+  ORA #$80                              ;ATN ausgeben
+  STA $911F
+  JSR $EF8D
+  LDA #$5F
+  .byte $2c
+JIF_UNLISTEN
+  LDA #$3F
+_relo0358 = . +1
+  JSR lEE1C                             ;PART OF LISTEN
+  JSR $EEC5
+  TXA
+  LDX #$0B
+lEF0F
+  DEX
+  BNE lEF0F
+  TAX
+  JSR $EF84
+  JMP $E4A0
+;--------------JIFFY UNTALK/UNLISTEN
+
+
+
+;--------------JIFFY TALK SA
+JIF_TALKSA
+  STA $95
+_relo0359 = . +1
+  JSR lEE40
+  jmp $eed3
+;--------------JIFFY TALK SA
+
+
+;--------------JIFFY LISTEN SA
+JIF_LISTENSA
+  STA $95
+_relo0360 = . +1
+  JSR lEE40
+  jmp $eec5
+;--------------JIFFY LISTEN SA
+
+
+
+
+
+
+;--------------JIFFY DATA TABLE
+lFCCE
+  .byte $00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22
+
+lFBBA
+  .byte $00,$00,$20,$20,$00,$00,$20,$20,$02,$02,$22,$22,$02,$02,$22,$22
+
+lF39E
+  .byte $00,$20,$00,$20,$02,$22,$02,$22,$00,$20,$00,$20,$02,$22,$02,$22
+;--------------JIFFY DATA TABLE
+
+
 
 
 
@@ -4012,6 +4441,37 @@ TOKEN_TAB
   dc.b TOK_RELO,TOK_RUN,TOK_SYS
 
 
+
+
+
+
+; ==============================================================
+; MESSAGE TEXTE
+; ==============================================================
+
+
+MSG_LOADERR
+  dc.b "LOAD ERROR",13,0
+MSG_LOADAT
+  dc.b " FROM ",0
+MSG_LOADTO
+  dc.b " TO ",0
+
+MSG_DEVICE
+  dc.b "DEVICE#",0
+
+
+MSG_PRINTIO
+  dc.b "IO=",0
+MSG_NOIO
+  dc.b "IO DISABLED",13,0
+
+
+
+WEDGEMESSAGE1b
+  dc.b $11, RED, "FE3 WEDGE (", 0
+WEDGEMESSAGE1c
+  dc.b "OFF)",BLUE,13,0
 
 
 
