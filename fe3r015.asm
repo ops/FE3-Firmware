@@ -1550,9 +1550,9 @@ MESE_EE
 ; + Anweisungen vom Stack ausführen
 ; ========================================================================
 
-BIP_CMD     = STP +0                    ;COMMAND BYTE
-BIP_IOBASE  = STP +1                    ;BASE FOR IO2 REGISTER 1 AND 2
-BIP_RUNADR  = STP +3                    ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
+BIP_CMD     = $0293                     ;COMMAND BYTE
+BIP_IOBASE  = BIP_CMD +1                ;BASE FOR IO2 REGISTER 1 AND 2
+BIP_RUNADR  = BIP_CMD +3                ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
 
 
 MESE_E
