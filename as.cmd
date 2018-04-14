@@ -1,1 +1,1 @@
-dasm.exe fe3r019.asm -ofe3firmware.prg -llist.txt
+dasm.exe fe3r019a.asm -ofe3firmware.prg -llist.txt

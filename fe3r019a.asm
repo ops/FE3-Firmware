@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 019
+; VIC 20 Final Expansion Cartridge - Revision 019a
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -242,7 +242,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R019 ", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R019A", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -3554,6 +3554,10 @@ MY_WEDGE_START
 
 
 
+
+; == START OF MINI WEDGE ============================================================
+
+
 ; ==============================================================
 ; RELOCATOR
 ; ==============================================================
@@ -3658,6 +3662,7 @@ RELO_E
 
 
 
+
 ; ==============================================================
 ; MY WEDGE
 ; ==============================================================
@@ -3714,7 +3719,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0060,_relo0061
   dc.w                     _relo0072
   dc.w _relo0080,_relo0081,_relo0082          ,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088;,_relo0089
-  dc.w           _relo0091,          _relo0093,_relo0094,_relo0095          ,_relo0097,_relo0098
+  dc.w _relo0090,_relo0091,          _relo0093,_relo0094,_relo0095          ,_relo0097,_relo0098
   dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104,_relo0105,_relo0106
   dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
   dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
@@ -4404,10 +4409,10 @@ _relo0098 = . +1
 .err2
   bcs .err
 
-;_relo0090 = . +1
-;  jsr DISK_CLOSE_LO
-
 .MYLO_E
+_relo0090 = . +1
+  jsr DISK_CLOSE_LO
+
 _relo0091 = . +1
   jsr PRINT_TOADR
 
@@ -6185,6 +6190,7 @@ MSG_NOIO
 
 
 MY_WEDGE_END
+; == END OF MINI WEDGE ============================================================
 
 
 
