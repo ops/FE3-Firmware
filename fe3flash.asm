@@ -610,6 +610,11 @@ BLANK_CHECK
   jsr STROUT
 
   jsr SET_PTR
+  jsr BLANK_CHECK_2
+  bne BLCH_E
+
+  jsr SET_PTR2
+BLANK_CHECK_2
   lda #$ff
 BLCH_2
   cmp (LOADPTR),y
@@ -625,6 +630,15 @@ BLCH_E
 
 
 SET_PTR
+  lda #$70                                ;DEFAULT CARTRIDGE ADDRESS
+  sta LOADPTR +1
+  lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
+  sta LOADPTR
+  ldx #16                                 ;BLOCK COUNT
+  ldy #0
+  rts
+
+SET_PTR2
   lda #$a0                                ;DEFAULT CARTRIDGE ADDRESS
   sta LOADPTR +1
   lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
@@ -637,6 +651,10 @@ INC_PTR
   inc LOADPTR
   bne INPT_2
   inc LOADPTR +1
+
+  lda LOADPTR +1
+  cmp #$80
+  beq SET_PTR2
 INPT_2
   rts
 

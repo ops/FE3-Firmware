@@ -1,6 +1,23 @@
 FE3Firmware Revisions:
 
-R015: bug fixes, changes in menus
+
+
+R017:
+
++ Cart Loader (f5) 
+
+
+
+R016:
+
++ Flash Firmware (firmware update) im Utility Menü
+
++ Flash Program (Cart Flasher) im Utility Menü
+
++ Flash Info (Cart Memory Statistic) im Utility Menü
+
+
+R015a: bug fixes, changes in menus
 
 
 R014:

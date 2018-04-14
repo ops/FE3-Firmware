@@ -1,5 +1,5 @@
-; VIC 20 Final Expansion Cartridge - Revision 015
-; Thomas Winkler - July 27, 2009
+; VIC 20 Final Expansion Cartridge - Revision 017
+; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
 ; Thanks to everyone on the Denial forums
@@ -7,8 +7,13 @@
 
   processor 6502                        ;VIC20
 
+  org $9000,0                           ;Modulstart (Fill value=0)
+
+  rorg $7000
 
 
+
+;------------------------------
 CAS_BUF     = $033c                     ;CASSETTE BUFFER
 F_IO        = CAS_BUF +0                ;IO FLAG
 F_WE        = CAS_BUF +1                ;WEDGE FLAG
@@ -17,6 +22,8 @@ F_JOYREP    = CAS_BUF +3                ;JOYSTICK TIMER
 
 MY_WEDGE_LO = CAS_BUF +4                ;WEDGE LOW ADDRESS
 
+F_END       = CAS_BUF +5
+;------------------------------
 
 
 FLGCOM  = $08
@@ -111,7 +118,7 @@ PRNINT  = $ddcd     ; print integer in X/A
 PRNERR  = $c437     ; print basic error message in X = (from $01 to $1e)
 BASSFT  = $e467     ; BASIC Warm Restart [RUNSTOP-RESTORE]
 CHRGETSUB = $0079   ; CHRGET subroutine return point after modify
-MOVMEM  = $c3bf     ; Move memory from (start($5f-$60)/end+1($5a-$5b)) to (end+1($58-$59))
+SY_MOVEMEM = $c3bf     ; Move memory from (start($5f-$60)/end+1($5a-$5b)) to (end+1($58-$59))
 GETIN   = $ffe4     ; Get a byte From Keyboad or serial device
 FRMEVL  = $cd9e     ; Evaluate Expression in Text
 RESET   = $fd22     ; Reset Vic
@@ -151,7 +158,7 @@ fl_status_word_st = $90
 fl_load_verify_flag = $93      ; Load=0 else Verify
 fl_current_device = $ba
 fl_char_in_file_name = $b7
-fl_filename_pointer_lo = $bb   
+fl_filename_pointer_lo = $bb
 fl_filename_pointer_hi = $bc
 fl_current_sa = $b9
 fl_current_logical_file = $b8
@@ -224,6 +231,156 @@ dati = 2		;128	;2
 
 
 
+
+
+
+
+; ==============================================================
+; Startup screen
+; ==============================================================
+
+STARTUPSCREEN
+; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
+  dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R017", CR, CR, CR
+  dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
+;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
+  dc.b CR, CR
+  dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
+  dc.b RVSON,"f4",RVSOFF,"  hELP", CR, CR
+  dc.b RVSON,"f5",RVSOFF," cART lOADER", CR, CR
+;  dc.b CR, CR
+  dc.b RVSON,"f6",RVSOFF,"  fe3 uTILITIES", CR, CR
+;  dc.b CR, CR
+  dc.b WHITE,RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
+  dc.b "",RVSON,"f8",RVSOFF,"  basic (NORMAL)", CR, CR, CR
+  dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #8"
+  dc.b $00
+
+
+; ==============================================================
+; Help screen
+; ==============================================================
+
+
+HELPSCREEN
+  dc.b WHITE
+HELPSCREEN3
+  dc.b CLRHOME,FONT2,RVSON,"fe3 wEDGE cOMMANDS", CR, CR  ;RVSOFF Not Needed
+  dc.b "$  dIRECTORY", CR
+  dc.b AT, "  sTATUS/cOMMAND", CR
+  dc.b "/  lOAD", CR
+  dc.b "%  lOAD bINARY", CR
+  dc.b "#  dRIVE", CR,CR
+  dc.b "OLD/UNNEW basic", CR
+  dc.b "KILL/OFF  END WEDGE", CR
+  dc.b "NOIO/BLKD/BLKP", CR
+  dc.b "RESET", CR
+  dc.b CR  ;RVSOFF Not Needed
+  dc.b "sys41000 hELP", CR
+  dc.b "sys41003 wEDGE", CR
+  dc.b "sys41006 wEDGE at $340", CR, CR, CR
+  dc.b $00
+
+; ==============================================================
+; RAM setting menu
+; ==============================================================
+
+RAMSCREEN
+  dc.b CLRHOME,FONT2,YELLOW,RVSON, "  ram cONFIGURATION   ",CR,CR,CR
+  dc.b WHITE,RVSON,"f1",RVSOFF," 3 kb (6655)", CR, CR
+  dc.b "",RVSON,"f2",RVSOFF,"  8 kb (11775)", CR, CR
+  dc.b RVSON,"f3",RVSOFF," 16 kb (19967)", CR, CR
+  dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
+  dc.b RVSON,"f5",RVSOFF," 24+3 kb (28159)", CR, CR
+  dc.b "",RVSON,"f6",RVSOFF,"  oFF (NO wEDGE!)", CR, CR
+  dc.b RVSON,"f7",RVSOFF," aLL ram (28159)", CR, CR, CR
+  dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
+  dc.b "io ",RVSON,"r",RVSOFF,"EGISTER ( )", CR
+  dc.b "eASY ",RVSON,"w",RVSOFF,"EDGE  ( )"
+  dc.b $00
+
+
+; ==============================================================
+; UTILITY menu
+; ==============================================================
+
+UTILSCREEN
+  dc.b CLRHOME,FONT2,YELLOW,RVSON, "    fe3 uTILITIES     ",CR,CR,CR
+  dc.b WHITE,RVSON,"f1",RVSOFF," fLASH pROGRAM", CR, CR
+  dc.b "",RVSON,"f2",RVSOFF,"  fLASH fIRMWARE", CR, CR
+  dc.b RVSON,"f3",RVSOFF," fLASH iNFO", CR, CR
+  ;dc.b CR, CR
+  ;dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
+  dc.b CR, CR
+;  dc.b RVSON,"f5",RVSOFF," bACKUP fLASH", CR, CR
+  dc.b CR, CR
+  ;dc.b "",RVSON,"f6",RVSOFF,"  oFF", CR, CR
+  dc.b CR, CR
+;  dc.b RVSON,"f7",RVSOFF," rESTORE fLASH", CR, CR, CR
+  dc.b CR, CR, CR
+F8SCREEN
+  dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
+  dc.b $00
+
+
+; ==============================================================
+; MENU FOOTER
+; ==============================================================
+
+MENUSCREEN
+  dc.b HOME,YELLOW, CR, CR
+;  dc.b 210,210,210,210,210,210,210,210,210,210,210
+  dc.b 96,96,96,96,96,96,96,96,96,96,96
+  dc.b 96,96,96,96,96,96,96,96,96,96,96
+  dc.b CR, CR, CR, CR, CR, CR, CR, CR, CR
+  dc.b CR, CR, CR, CR, CR, CR, CR, CR, CR
+  dc.b 96,96,96,96,96,96,96,96,96,96,96
+  dc.b 96,96,96,96,96,96,96,96,96,96,96, CR
+;  dc.b 197,197,197,197,197,197,197,197,197,197,197,CR
+
+;      "---- DISK LOADER -----"
+  dc.b RVSON,"f1",RVSOFF,"/",RVSON,"f3",RVSOFF,":pGuP/dWN "
+  dc.b RVSON,"f8",RVSOFF,":eXIT",CR
+  dc.b RVSON,"f5",RVSOFF,"/",RVSON,"f7",RVSOFF,":fIRST-/lAST lINE"
+  dc.b HOME,$00
+
+
+; ==============================================================
+; The credits!
+; ==============================================================
+
+THECREDITS
+  dc.b CLRHOME, YELLOW, "V3 06/2009", CR, CR
+  dc.b RED, "CREATED BY:", CR, CR
+  dc.b BLACK
+  dc.b "LEIF BLOOMQUIST", CR
+  dc.b "ANDERS PERSSON", CR
+  dc.b "ANDERS CARLSSON", CR
+  dc.b "CHRISTOPHER PREST", CR
+  dc.b "BRIAN LYONS", CR
+  dc.b "LEE DAVIDSON", CR
+  dc.b "SCHLOWSKI", CR
+  dc.b "VIPERSAN", CR
+  dc.b "DANIEL KAHLIN", CR
+  dc.b "JEFF DANIELS", CR
+  dc.b "MICHAEL KLEIN", CR
+  dc.b "DAVID A. HOOK", CR
+  dc.b "TOMMY WINKLER", CR, CR
+  dc.b PURPLE
+  dc.b "WWW.SLEEPINGELEPHANT", CR
+  dc.b "        .COM/DENIAL/", CR
+  dc.b BLUE
+  dc.b $00
+
+
+
+
+  rend
+
+
+
+
   org $a000,0                           ;$A000   (Fill value=0)
 
 ; ==============================================================
@@ -236,6 +393,7 @@ CARTID
   dc.b "A0",$C3,$C2,$CD	; 'A0CBM' boot string
 
 
+SY_STROUT  = $cb1e                      ;String in AC/YR ausgeben
 
 SY_RAMTAS  = $fd8d
 ;SY_RAMTAS2 = $fd9b
@@ -270,50 +428,48 @@ START
 
   org $a028                             ; - equals 41000 decimal, easy to remember!
 
-JMPTABLE
+JMP_TABLE
   jmp HELP2                             ; sys 41000: Help sreen
   jmp MY_WEDGE_INIT                     ; sys 41003: Init Wedge
   jmp MOVE_WEDGE_LOW                    ; sys 41006: Copy Wedge to low mem
+  jmp CART_LOADER
 
 
 
   ; COPY FIRMWARE FROM EEPROM TO SRAM
-COPYROM
-  ;sta $a000                            ;UNLOCK IO - DOESN'T WORK SO!!
-
-  lda #FEMOD_ROM                        ;ROM
-  jsr UNLOCK_IO                         ;UNLOCK IO
-
+COPYROM subroutine
   lda #>$a000
   ldy #<$a000
+  ldx #32                               ; copy 32 pages
+
+COPYROM_2
   sta PT2 +1
   sty PT2
 
   jsr TEST_RAM                          ;RAM OK?
-  bcc CORO_2
+  bcc .02
 
-  ldx #32                               ; copy 32 pages
-  ;ldy #0
-CORO_1
+  ldy #0
+.01
   lda (PT2),y
   sta (PT2),y
   iny
-  bne CORO_1
+  bne .01
   inc PT2 +1
   dex
-  bne CORO_1
+  bne .01
   ;sty CARTID
   ;sty CARTID +1
 
   lda #FEMOD_RAM +$10                   ; ALL RAM, PROTECT BLK-5
   sta IO_FINAL
   sec
-CORO_2
+.02
   rts
 
 
 
-INIT_CART
+INIT_CART subroutine
   lda #$6e                ; Blue Screen
   ;lda #$6d                 ; Blue Screen,green border
   ;lda #$6b                 ; Blue Screen, cyan border
@@ -321,44 +477,45 @@ INIT_CART
   rts
 
 
-START2
+START2 subroutine
   lda #"."
   sta F_IO
   lda #"X"
   sta F_WE
 
-CHECK
+.CHECK
 ; Check which control keys are pressed.
   lda $028d
 
 ; if C=, go straight to BASIC.
   cmp #$02
-  bne SHIFT
+  bne .SHIFT
   jmp BASIC
 
 ; if SHIFT, go straight to BASIC with wedge enabled.
-SHIFT
+.SHIFT
   cmp #$01
-  bne SHIF_1
+  bne .01
+.wedge
   jmp STARTWEDGE
 
-SHIF_1
+.01
+  lda #FEMOD_ROM                        ;ROM
+  jsr UNLOCK_IO                         ;UNLOCK IO
   jsr COPYROM
-;  bcc SHIF_2
+  bcc .wedge
 
-;  lda #0
-;  jsr SetVicMemConfig
-SHIF_2
+
 
 ; ==============================================================
 ; Default Startup - show init screen
 ; ==============================================================
-SSCREEN
-  jsr INIT_CART
 
+SSCREEN subroutine
+  jsr INIT_CART
   lda #<STARTUPSCREEN
   ldy #>STARTUPSCREEN
-  jsr STROUT
+  jsr STROUT_R
 
 SETUPTIMEOUT
   ;Initialize Timer
@@ -368,7 +525,7 @@ SETUPTIMEOUT
 ;  iny     ;Jump ahead three 'ticks' = 12.6 seconds
 
 ; Check for timeout
-TIMEOUT
+.TIMEOUT
 ;  cpy $a1
 ;  bne KEYS
 
@@ -376,73 +533,91 @@ TIMEOUT
 ;  jmp STARTWEDGE
 
 ; Check keys
-KEYS
-  jsr GETJOY
-  cmp #$00
-  beq TIMEOUT
+.KEYS
+  jsr WAIT_KEY
 
-DENIAL
+.DENIAL
   cmp #$44   ;D
-  bne F1
-  jsr CREDITS
+  bne .F1
+  ;jsr CREDITS
   jmp WAITSPACE_2
 
-F1
+.F1
   cmp #$85  ;F1
-  bne DEL
+  bne .DEL
   jmp RAMMENU
 
-DEL
-  cmp #$14  ;DEL
-  bne F2
-  jmp STARTWEDGE
+.DEL
+;  cmp #$14  ;DEL
+;  bne .F2
+;  jmp STARTWEDGE
 
-F2
+.F2
 ;  cmp #$89  ;F2
 ;  bne F3
 ;  jsr INIT_BASIC
 ;  jsr SY_INITMSG                        ; INIT Message
 ;  jmp DO_UNNEW
 
-F3
+.F3
   cmp #$86  ;F3
-  bne F4
-  jmp DLOADER
+  bne .F4
 
-F4
+  jsr DLOADER
+  clc
+  bcc SSCREEN
+
+.F4
   cmp #$8a  ;F4
-  bne F5
+  bne .F5
   jmp HELP
 
-F5
+.F5
   cmp #$87  ;F5
-  bne F6
-  ;jmp CARTLOADER
+  bne .F6
+  jmp CART_LOADER
 
-F6
+.F6
   cmp #$8b  ;F6
-  bne PLUS
+  bne .PLUS
   jmp UTIL_MENU
 
-PLUS
+.PLUS
   cmp #$2b  ;+
-  bne MINUS
+  bne .MINUS
   jmp INCDRIVE
 
-MINUS
+.MINUS
   cmp #$2D  ;-
-  bne F7
+  bne .F7
   jmp DECDRIVE
 
-F7
+.F7
   cmp #$88  ;F7
-  bne F8
+  bne .F8
   jmp STARTWEDGE
 
-F8
+.F8
   cmp #$8C
-  bne TIMEOUT
+  bne .TIMEOUT
   jmp BASIC
+
+
+
+
+; ==============================================================
+; DISPLAY STRING IN ROM    in AC/YR
+; ==============================================================
+
+STROUT_R subroutine
+  pha
+  lda #FEMOD_ROM
+  sta IO_FINAL
+  pla
+  jsr STROUT
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  rts
 
 
 ; ==============================================================
@@ -495,15 +670,15 @@ STARTWEDGE2
 
   lda #<WEDGEMESSAGE1b
   ldy #>WEDGEMESSAGE1b
-  jsr STROUT
+  jsr STROUT_R
 
   lda PTR_INPUT_LOOP +1
 
 STWE_3
-  jsr HEX2
+  jsr HEXOUT2
   lda #<WEDGEMESSAGE2
   ldy #>WEDGEMESSAGE2
-  jsr STROUT
+  jsr STROUT_R
   jmp BASIC_WARM
 
 
@@ -544,9 +719,6 @@ BASIC2
 RESTORE
   jmp $fec7   ; Continue as if no cartridge installed
 
-;Don't use $fea9!
-;$fea9 goes to ($0318) which goes to $fead which ends up with a jmp ($a002)...
-
 
 
 ; ==============================================================
@@ -557,7 +729,8 @@ CREDITS
   sta $900f ; Screen colors
   lda #<THECREDITS
   ldy #>THECREDITS
-  jmp STROUT
+  jmp STROUT_R
+
 
 ; ==============================================================
 ; Wait here for space bar or F8
@@ -576,6 +749,12 @@ WAITSPACE
 WASP_1
   rts
 
+WAIT_KEY
+  jsr GETIN
+  cmp #0
+  beq WAIT_KEY
+  rts
+
 
 ; ==============================================================
 ; Help Screen
@@ -584,14 +763,14 @@ HELP
   jsr HELP2
   lda #<F8SCREEN
   ldy #>F8SCREEN
-  jsr STROUT
+  jsr STROUT_R
   jmp WAITSPACE_2
 
 
 HELP2
   lda #<HELPSCREEN3
   ldy #>HELPSCREEN3
-  jmp STROUT
+  jmp STROUT_R
 
 
 ; ==============================================================
@@ -661,7 +840,7 @@ DIGITS
 RAMMENU
   lda #<RAMSCREEN
   ldy #>RAMSCREEN
-  jsr STROUT
+  jsr STROUT_R
 
   ; Check keys
 KEYS_0
@@ -827,8 +1006,17 @@ RUNBASIC
   jmp BIP
 
 
-BASICSCREEN
-  dc.b FONT1,CLRHOME,0
+;-------- RAM PROCEDURE TO SWITCH CARTRIDGE AND RUN BASIC
+__SET_IO_RUN
+  sta IO_FINAL
+  stx IO_FINAL +1
+;  jsr SY_PGMLINK                        ;Relinks BASIC Program from and to any address...
+  lda #0
+  jsr $ff90
+  JSR SY_BASCLR2                        ;CLR
+  JMP $C7AE
+__SET_IO_RUN_E
+
 
 
 
@@ -857,16 +1045,6 @@ SYS_XY_2
   ldx BIP_IOBASE +1
   jmp BIP
 
-
-
-;-------- RAM PROCEDURE TO SWITCH CARTRIDGE AND RUN BASIC
-__SET_IO_RUN
-  sta IO_FINAL
-  stx IO_FINAL +1
-  JSR BASCLR2                           ;CLR
-  jsr PGMLINK                           ;Relinks BASIC Program from and to any address...
-  JMP $C7AE
-__SET_IO_RUN_E
 
 
 
@@ -968,6 +1146,7 @@ BLACK   = $90
 WHITE   = $05
 RED     = $1C
 BLUE    = $1F
+GREEN   = $1E
 PURPLE  = $9C
 YELLOW  = $9E
 FONT1   = 142               ; BIG LETTERS & GRAFIC
@@ -979,152 +1158,67 @@ AT      = $40
 ; ==============================================================
 ; SUBMENU UTILITY
 ; ==============================================================
+UTIL_FLI
+  jsr FLASH_INFO
 
-UTIL_MENU
+UTIL_MENU subroutine
+  jsr INIT_CART                         ; Screen Colors
   lda #<UTILSCREEN
   ldy #>UTILSCREEN
-  jsr STROUT
+  jsr STROUT_R
 
   ; Check keys
-KEYS_UT0
+.KEYS
   ;jsr SHOW_IO
   ;jsr SHOW_WE
 
-KEYS_UT1
   jsr GETIN
 
 
 
-F1_UT1
+.F1
   cmp #$85  ;F1
-  bne F2_UT1
+  bne .F2
 
-  ;jsr SetVicAs3K
-  ;lda #FEMOD_RAM +$1E                   ;3KB RAM
-  ;bne SET_RAM
+  jmp CART_FLASHER
 
-F2_UT1
+
+.F2
   cmp #$89  ;F2
   bne F3_UT1
 
+  jmp FIRMW_FLASHER
+
 
 F3_UT1
-;  cmp #$86  ;F3
-;  bne F4_UT1
+  cmp #$86  ;F3
+  beq UTIL_FLI
 
-
-F4_UT1
+.F4
 ;  cmp #$8a  ;F4
 ;  bne F5_UT1
 
 
-F5_UT1
+.F5
   cmp #$87  ;F5
-  bne F6_UT1
+  bne .F6
 
 
-F6_UT1
+.F6
   cmp #$8b  ;F6
-  bne F7_UT1
+  bne .F7
 
 
-F7_UT1
+.F7
   cmp #$88  ;F7
-  bne F8_UT1
+  bne .F8
 
 
-F8_UT1
+.F8
   cmp #$8C
-  bne KEYS_UT1
+  bne .KEYS
   jmp SSCREEN
 
-
-
-; ==============================================================
-; Help screen
-; ==============================================================
-
-
-HELPSCREEN
-  dc.b WHITE
-HELPSCREEN3
-  dc.b CLRHOME,FONT2,RVSON,"fe3 wEDGE cOMMANDS", CR, CR  ;RVSOFF Not Needed
-  dc.b "$  dIRECTORY", CR
-  dc.b AT, "  sTATUS/cOMMAND", CR
-  dc.b "/  lOAD", CR
-  dc.b "%  lOAD bINARY", CR
-  dc.b "#  dRIVE", CR,CR
-  dc.b "OLD/UNNEW basic", CR
-  dc.b "KILL/OFF  END WEDGE", CR
-  dc.b "NOIO/BLKD/BLKP", CR
-  dc.b "RESET", CR
-  dc.b CR  ;RVSOFF Not Needed
-  dc.b "sys41000 hELP", CR
-  dc.b "sys41003 wEDGE", CR
-  dc.b "sys41006 wEDGE at $340", CR, CR, CR
-  dc.b $00
-
-; ==============================================================
-; Startup screen
-; ==============================================================
-
-STARTUPSCREEN
-; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
-  dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R015", CR, CR, CR
-  dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
-;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
-  dc.b CR, CR
-  dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
-  dc.b RVSON,"f4",RVSOFF,"  hELP", CR, CR
-;  dc.b RVSON,"f5",RVSOFF," cART lOADER", CR, CR
-  dc.b CR, CR
-;  dc.b RVSON,"f6",RVSOFF,"  fe3 uTILITIES", CR, CR
-  dc.b CR, CR
-  dc.b WHITE,RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
-  dc.b "",RVSON,"f8",RVSOFF,"  basic (NORMAL)", CR, CR, CR
-  dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #8"
-  dc.b $00
-
-
-; ==============================================================
-; RAM setting menu
-; ==============================================================
-
-RAMSCREEN
-  dc.b CLRHOME,FONT2,YELLOW,RVSON, "  ram cONFIGURATION   ",CR,CR,CR
-  dc.b WHITE,RVSON,"f1",RVSOFF," 3 kb (6655)", CR, CR
-  dc.b "",RVSON,"f2",RVSOFF,"  8 kb (11775)", CR, CR
-  dc.b RVSON,"f3",RVSOFF," 16 kb (19967)", CR, CR
-  dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
-  dc.b RVSON,"f5",RVSOFF," 24+3 kb (28159)", CR, CR
-  dc.b "",RVSON,"f6",RVSOFF,"  oFF (NO wEDGE!)", CR, CR
-  dc.b RVSON,"f7",RVSOFF," aLL ram (28159)", CR, CR, CR
-  dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
-  dc.b "io ",RVSON,"r",RVSOFF,"EGISTER ( )", CR
-  dc.b "eASY ",RVSON,"w",RVSOFF,"EDGE  ( )"
-  dc.b $00
-
-
-; ==============================================================
-; UTILITY menu
-; ==============================================================
-
-UTILSCREEN
-  dc.b CLRHOME,FONT2,YELLOW,RVSON, "    fe3 uTILITIES     ",CR,CR,CR
-  dc.b WHITE,RVSON,"f1",RVSOFF," fLASH pROGRAM", CR, CR
-  dc.b "",RVSON,"f2",RVSOFF,"  fLASH fIRMWARE", CR, CR
-  ;dc.b RVSON,"f3",RVSOFF," 16 kb (19967)", CR, CR
-  dc.b CR, CR
-  ;dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
-  dc.b CR, CR
-  dc.b RVSON,"f5",RVSOFF," bACKUP fLASH", CR, CR
-  ;dc.b "",RVSON,"f6",RVSOFF,"  oFF", CR, CR
-  dc.b CR, CR
-  dc.b RVSON,"f7",RVSOFF," rESTORE fLASH", CR, CR, CR
-F8SCREEN
-  dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
-  dc.b $00
 
 
 
@@ -1139,35 +1233,41 @@ F8SCREEN
 
 
 ;-------------- PRINT DLOADER SCREEN
+DLOA_00
+  jsr MENU_SEL
+  bcc DLOA_01
+  jsr MESE_EXEC
+DLOA_01
+
 DLOADER
-  jsr DLOADER1
-  jmp SSCREEN
-
-
-DLOADER1
   jsr INIT_CART                         ; Screen Colors
+  jsr SPAR_PRINTSTRING
+  dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- dISK lOADER  ----",CR,CR,0
 
-  lda #<DLOADSCREEN
-  ldy #>DLOADSCREEN
-  jsr STROUT
+  jsr DLOADER1
+  cpx #13                                 ;CR
+  beq DLOA_00
+  rts
 
+
+DLOADER1 subroutine
   jsr COPYROM                           ; COPY FIRMWARE TO SRAM
-  bcs DLO_2                             ; ==> RAM OK
+  bcs .02                               ; ==> RAM OK
 
-  lda #<MSG_RAMMERR
-  ldy #>MSG_RAMMERR
+  jsr SPAR_MSGBOX
+  dc.b 2, 3, RED, "ram eRROR at $a ...",0
+.exit
+  ldx #0
+  rts
+
+  ;lda #<MSG_RAMMERR
+  ;ldy #>MSG_RAMMERR
   ;jmp MSG_BOX
 
-MSG_BOX
-  jsr STR_AT
-  jsr WAITSPACE
-  ldx #2
-  jmp DEL_LINE
 
-
-DLO_2
+.02
   jsr DLOADER_INIT
-  bcs DLOADER_E
+  bcs .exit
 
   jsr BLD_TABLE
   jsr MENU_HANDLER
@@ -1179,9 +1279,11 @@ DLO_2
 DLOADER_INIT
   jsr MENU_INIT
 
-  lda #<MSG_LOAD
-  ldy #>MSG_LOAD
-  jsr STR_AT
+  ;lda #<MSG_LOAD
+  ;ldy #>MSG_LOAD
+  ;jsr STR_AT
+  jsr SPAR_PRINTSTRING_AT
+  dc.b 1, 3, WHITE, "LOADING ...",0
 
   jsr LOAD_MENU
   php
@@ -1196,28 +1298,16 @@ DLOADER_E
 MENU_INIT
   lda #<MENUSCREEN
   ldy #>MENUSCREEN
-  jsr STROUT
+  jsr STROUT_R
 
+  lda #5
+  sta FLGCOM
   lda #0
   sta DL_SLINIDX
   lda #DL_STARTLINE
   sta DL_SEL
 MEIN_E
   rts
-
-
-; ==============================================================
-; DISKLOADER menu
-; ==============================================================
-
-DLOADSCREEN
-  dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- dISK lOADER  ----",CR,CR,0
-
-MSG_LOAD
-  dc.b 1, 3, WHITE, "LOADING ...",0
-MSG_RAMMERR
-  dc.b 2, 3, RED, "ram eRROR $a ...",0
-
 
 
 ; ==============================================================
@@ -1282,29 +1372,60 @@ TBL_NAMES  = $6000
 TBL_NAMES_CNT = TBL_NAMES
 
 
-DL_CURLIN  = C_ROW                        ;TEMP. AKT LINE TO DRAW
+DL_CURLIN  = C_ROW                      ;TEMP. AKT LINE TO DRAW
 
-TBL_DATA   = CAS_BUF +32
-DL_SLINIDX = TBL_DATA                     ;INDEX OF FIRST LINE
-DL_CURIDX  = TBL_DATA +1                  ;TEMP. AKT. INDEX
-DL_CNT     = TBL_DATA +2                  ;TEMP. COUNTER
-DL_SEL     = TBL_DATA +3                  ;selected menu line
-DL_LINCNT  = TBL_DATA +4                  ;count of lines
-DL_LASTLIN = TBL_DATA +5                  ;last line
-DL_CNTLDR  = TBL_DATA +6                  ;LOAD FILES COUNT
-DL_IOBASE  = TBL_DATA +7                  ;BASE FOR IO2 REGISTER 1 AND 2
-;DL_RUNADR  = TBL_DATA +9                  ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
+TBL_CLBUF  = F_END                      ;CATALOG BUFFER (CATALOG ENTRY)
 
-DL_LDBUF   = TBL_DATA +11                 ;LOAD BUFFER - bis zu 4 x DATEI,OPTIONS
-LDBUF_LEN  = 0                            ;OFFSET FILENAME LENGTH
-LDBUF_FN   = 1                            ;OFFSET FILENAME
-LDBUF_TYP  = 17                           ;OFFSET TYPE: B=BASIC, P=PROGRAM, C=CARTRIDGE
-LDBUF_LAD  = 18                           ;OFFSET LOAD ADRESS
-LDBUF_END  = 20                           ;STRUCT LDBUF LEN
+TBL_DATA   = F_END + CLBUF_END
+DL_SLINIDX = TBL_DATA                   ;INDEX OF FIRST LINE
+DL_CURIDX  = TBL_DATA +1                ;TEMP. AKT. INDEX
+DL_CNT     = TBL_DATA +2                ;TEMP. COUNTER
+DL_SEL     = TBL_DATA +3                ;selected menu line
+DL_LINCNT  = TBL_DATA +4                ;count of lines
+DL_LASTLIN = TBL_DATA +5                ;last line
+DL_CNTLDR  = TBL_DATA +6                ;LOAD FILES COUNT
+DL_CNTLDR2 = TBL_DATA +7                ;LOAD FILES COUNT
+DL_IOBASE  = TBL_DATA +8                ;BASE FOR IO2 REGISTER 1 AND 2
+;DL_RUNADR  = TBL_DATA +10              ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
 
 
-DL_STARTLINE = 3                          ;start line
-DL_LINES     = 17                         ;number of lines
+  ;FILE HEADER (LOAD BUFFER)
+DL_LDBUF   = TBL_DATA +12               ;LOAD BUFFER - bis zu 4 x DATEI,OPTIONS
+LDBUF_LEN  = 0                          ;OFFSET FILENAME LENGTH
+LDBUF_FN   = 1                          ;OFFSET FILENAME
+LDBUF_TYP  = 17                         ;OFFSET TYPE: B=BASIC, P=PROGRAM, C=CARTRIDGE
+LDBUF_LAD  = 18                         ;OFFSET LOAD ADRESS
+LDBUF_FLEN = 20                         ;OFFSET FILE LENGTH
+LDBUF_END  = 22                         ;STRUCT LDBUF LEN
+
+
+    ;CATALOG ENTRY
+CLBUF_LEN   = 0                         ;OFFSET ENTRY NAME LENGTH
+CLBUF_NAM   = 1                         ;OFFSET ENTRY NAME
+CLBUF_CNT   = 21                        ;OFFSET FILES COUNT
+CLBUF_PLEN  = 22                        ;OFFSET PACKAGE LENGTH
+CLBUF_SADR  = 24                        ;OFFSET START ADDRESS
+CLBUF_SBANK = 26                        ;OFFSET START BANK
+CLBUF_EADR  = 27                        ;OFFSET END ADDRESS
+CLBUF_EBANK = 29                        ;OFFSET END BANK
+CLBUF_END   = 32                        ;STRUCT LDBUF LEN
+
+
+    ;CLOADER PACKAGE HEADER
+CLHDR_CMD   = 0                         ;OFFSET START COMMAND (SYS/RES/RUN)
+CLHDR_IO1   = 1                         ;OFFSET IO REGISTER 1
+CLHDR_IO2   = 2                         ;OFFSET IO REGISTER 2
+CLHDR_ADR   = 3                         ;OFFSET START ADDRESS
+CLHDR_END   = 5                         ;STRUCT LDHDR LEN
+
+
+
+
+
+
+
+DL_STARTLINE = 3                        ;start line
+DL_LINES     = 17                       ;number of lines
 
 
 
@@ -1325,6 +1446,8 @@ MEHA_1
   sta KEYANZ
 MEHA_5
   jsr GETJOY
+  tax
+  
   cmp #$00
   beq MEHA_5
 
@@ -1332,7 +1455,7 @@ MEHA_5
   beq MEHA_E
 
   cmp #13                                 ;CR
-  beq MENU_SEL
+  beq MEHA_E
 
   jsr MEHA_8
   clv
@@ -1439,12 +1562,53 @@ SET_MARKER
 ;----MENU PUNKT GEWÄHLT!
 BASPTR = $7a
 
-MENU_SEL
-  lda DL_LINCNT
-  bne MESE_0
-  jmp MENU_HANDLER
 
-MESE_0
+
+
+  ;INIT CATALOG BUFFER
+INIT_CATALOG subroutine
+  lda #0
+  ldy #CLBUF_END -1
+.00
+  sta TBL_CLBUF,y
+  dey
+  bpl .00
+
+  ldx #0
+
+  ;COPY ENTRY STRING
+  ldy #5
+.1
+  lda (PT2),y
+  beq .E
+  cmp #34
+  beq .E
+
+  sta TBL_CLBUF+1,x                     ;
+  inx
+  iny
+  cpx #(CLBUF_CNT - CLBUF_NAM)          ;MAX. LENGTH
+  bne .1
+.E
+  stx TBL_CLBUF                         ;ENTRY LENGTH
+  rts
+
+
+
+  ;SET PTR TO LOADER TAB
+SET_LDBUF subroutine
+  lda #<(DL_LDBUF)
+  ldy #>(DL_LDBUF)
+  sta PT1
+  sty PT1 +1
+  rts
+
+
+
+
+
+  ;PROCESS SELECTED MENU ENTRY
+MENU_SEL_INIT subroutine
   lda #0
   sta BIP_CMD
   sta DL_CNTLDR
@@ -1455,34 +1619,43 @@ MESE_0
   lda #0                                ;ALL RESOURCES
   sta DL_IOBASE +1
 
-MESE_1
   lda DL_SEL
   sec
   sbc #DL_STARTLINE
-  bcc MESE_EE
-
+  bcs .1
+  rts
+.1
   clc
   adc DL_SLINIDX
-  jsr TBL_PTR
-  bcs MESE_EE
+  jmp TBL_PTR                           ;SET PT2 TO ENTRY STRING
 
-  lda #<(DL_LDBUF)
-  ldy #>(DL_LDBUF)
-  sta PT1
-  sty PT1 +1
 
-MESE_2
+  ;PROCESS SELECTED MENU ENTRY
+MENU_SEL subroutine
+  lda DL_LINCNT
+  bne .0
+  clc
+  rts
+
+.0
+  jsr MENU_SEL_INIT                     ;SET PT2 TO ENTRY STRING
+  bcs .EE
+
+  jsr INIT_CATALOG                      ;INITIALIZE CATALOG BUFFER
+  jsr SET_LDBUF                         ;
+
+.2
   jsr NEXTLINE
-  beq MESE_E
+  beq .E
   ldy #4
-MESE_5
+.5
   lda (PT2),y
-  beq MESE_E                            ;CODE ENDE
+  beq .E                                ;CODE ENDE
   cmp #34                               ;NEXT MENU ENTRY
-  beq MESE_E
+  beq .E
 
   cmp #$aa                              ;"+" - LOADER ANWEISUNG
-  bne MESE_2
+  bne .2
 
   tya
   sec
@@ -1492,35 +1665,35 @@ MESE_5
   adc #0
   sta CHRPTR +1
 
-MESE_2a
+.2a
   jsr CHRGOT
-  bne MESE_2b
-MESE_2c
+  bne .2b
+.2c
   tax
-  beq MESE_2
+  beq .2
 
   jsr CHRGET                            ;SKIP ":"
-  beq MESE_2c
-MESE_2b
-  jsr MESE_50
-  jmp MESE_2a
+  beq .2c
+.2b
+  jsr .50
+  jmp .2a
 
-MESE_50
+.50
   cmp #34                               ;+"FILENAME"
-  bne MESE_6
+  bne .6
   jmp SEL_LOAD
 
-MESE_6
+.6
   cmp #"@"                              ;+@"diskcmd"
-  bne MESE_7
+  bne .7
   jmp DO_DISKCMD
 
-MESE_7
+.7
   jsr TOKENIZER
-  bne MESE_8
+  bne .8
   jmp NEXT_STATEMENT
 
-MESE_8
+.8
   cpx #TOK_NOIO                         ;NOIO
   beq SEL_NOIO
   cpx #TOK_BLKP                         ;BLOCK WRITE PROTECT
@@ -1537,8 +1710,19 @@ MESE_8
   beq SEL_SYS
   ;cpx #TOK_RES                          ;RESET
   ;beq SEL_RESET
-MESE_EE
+.EE
+  clc
   rts
+
+.E
+SET_BIP_IOBASE SUBROUTINE
+  lda DL_IOBASE +1
+  sta BIP_IOBASE +1
+  lda DL_IOBASE
+  sta BIP_IOBASE
+  sec
+  rts
+
 
 
 
@@ -1555,7 +1739,8 @@ BIP_IOBASE  = BIP_CMD +1                ;BASE FOR IO2 REGISTER 1 AND 2
 BIP_RUNADR  = BIP_CMD +3                ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
 
 
-MESE_E
+  ;EXECUTE DLOADER BUFFER
+MESE_EXEC
   lda DL_CNTLDR
   beq LOCO_RELOAD
 
@@ -1563,20 +1748,16 @@ MESE_E
   ;  lda #<DLOADSCREEN
   ;  ldy #>DLOADSCREEN
   ;  jsr STROUT
-  lda #CLRHOME
-  jsr CHROUT
+  jsr CLROUT
 
   ldx BIP_CMD
   beq LOCO_RELOAD
   cpx #TOK_RELO                         ;RELOAD
   beq LOCO_RELOAD
 
-  lda DL_IOBASE +1
-  sta BIP_IOBASE +1
-  lda DL_IOBASE
-  sta BIP_IOBASE
-  sta IO_FINAL
-  jsr SetVicMemConfig
+  jsr SET_MEM_CONFIG
+  ;jsr SetVicMemConfig
+
   ;jsr INIT_BASIC                        ; original color
   ;jsr SY_RAMTAS2                        ; calculate RAM size
   ;jsr SY_BASRAM                         ; BASIC RAM (e3a4)
@@ -1590,6 +1771,7 @@ MESE_E
   jsr LOADER                            ; LOAD FILES
   bcs LOCO_RELOAD
 
+EXEC_PACKAGE
   ldx BIP_CMD
   cpx #TOK_RES                          ;RESET
   beq LOCO_RES
@@ -1599,11 +1781,7 @@ MESE_E
   beq LOCO_SYS
 
 LOCO_RELOAD
-  ;jsr COPYROM                           ;RESTORE CART-CODE AND SWITCH TO RAM
-  ldx BIP_CMD
-  cpx #TOK_RELO                         ;RELOAD??
-  beq LORE_E
-  jmp MENU_HANDLER
+  jmp DLOADER
 
 LORE_E
   rts
@@ -1756,7 +1934,7 @@ LIPA_2
   jsr CHROUT
 
   lda DL_CURIDX
-  jsr LIST_LINE
+  jsr LIST_LINE                     ;LIST LINE (AC)
   inc DL_CURLIN
   inc DL_CURIDX
   dec DL_CNT
@@ -1771,99 +1949,96 @@ LIPA_2
 
 
 ;----LIST LINE. AC=TAB ENTRY
-LIST_LINE
-  jsr TBL_PTR
-  bcs LICU_E
+LIST_LINE subroutine
+  jsr TBL_PTR                           ;SET PT2 TO ENTRY STRING
+  bcs .E
 
   inc DL_LINCNT
-  ldy #5
-LICU_1
+  ;ldy #5
+  ldy FLGCOM
+.1
   lda (PT2),y
-  beq LICU_E
+  beq .E
   cmp #34
-  beq LICU_E
+  beq .E
   ;jsr CHROUT
   jsr CONVCHR
-  bcc LICU_5
-LICU_3
+  bcc .5
+.3
   sty C_CHR
   jsr PUTCHR2
   lda C_COL
   cmp #$15
-  beq LICU_EE
+  beq .EE
   inc C_COL
   ldy C_CHR
-LICU_5
+.5
   iny
-  bne LICU_1
-LICU_E
+  bne .1
+.E
   lda #32
   ldy $d3
-LICU_E2
+.E2
   sta (C_LINE),y
   iny
   cpy #$15
-  bne LICU_E2
-LICU_EE
+  bne .E2
+.EE
   rts
 
 
-;----OFFSET --> TAB POINTER
-TBL_PTR
-  cmp TBL_NAMES
-  bcs TAOF_E
+  ;----OFFSET (AC) --> TAB POINTER
+  ; :: SET PT1 TO MENU ENTRY TABLE
+  ; :: SET PT2 TO MENU ENTRY STRING
+TBL_PTR subroutine
+  cmp TBL_NAMES                         ;NUMBER OF ENTRIES
+  bcs .exit
 
   ldy #>(TBL_NAMES+1)
-  asl                       ; *2
-  bcc TAOF_1
+  asl                                   ;*2
+  bcc .1
   iny
   clc
-TAOF_1
+.1
   adc #<(TBL_NAMES+1)
-  sta PT1
-  bcc TAOF_2
+  sta PT1                               ;ADDR LO - ENTRY
+  bcc .2
   iny
-TAOF_2
-  sty PT1 +1
+.2
+  sty PT1 +1                            ;ADDR HI - ENTRY
 
   ldy #1
   lda (PT1),y
-  sta PT2 +1
+  sta PT2 +1                            ;ADDR LO - ENTRY STRING
   dey
   lda (PT1),y
-  sta PT2
+  sta PT2                               ;ADDR HI - ENTRY STRING
 
   clc
-TAOF_E
+.exit
   rts
 
 
 ;----BUILD NAME TABLE FROM BASIC TEXT
-BLD_TABLE
-  lda #0
-  sta TBL_NAMES
-
-  lda #<(TBL_NAMES+1)
-  ldy #>(TBL_NAMES+1)
-  sta PT2
-  sty PT2 +1
+BLD_TABLE subroutine
+  jsr BLD_TABLE_INIT                    ;INITIALIZE BLD TABLE
 
   lda BASSTRT
   ldx BASSTRT +1
 
-BUTA_2
+.2
   sta PT1
   stx PT1 +1
 
   ldy #1
   lda (PT1),y
-  beq BUTA_E
+  beq .E
 
   tax
   ldy #4
   lda (PT1),y
   cmp #34
-  bne BUTA_5
+  bne .5
 
 ; FOUND PROGRAM NAME
   ldy #0
@@ -1873,23 +2048,30 @@ BUTA_2
   iny
   sta (PT2),y
 
-  inc PT2
-  bne BUTA_3a
-  inc PT2 +1
-BUTA_3a
-  inc PT2
-  bne BUTA_3b
-  inc PT2 +1
-BUTA_3b
+  jsr INC_PT2
+  jsr INC_PT2
   inc TBL_NAMES
 
-BUTA_5
+.5
   ldy #0
   lda (PT1),y
-  jmp BUTA_2
+  jmp .2
 
-BUTA_E
+.E
   rts
+
+  ;INITIALIZE BLD TABLE
+BLD_TABLE_INIT subroutine
+  lda #0
+  sta TBL_NAMES
+
+  lda #<(TBL_NAMES+1)
+  ldy #>(TBL_NAMES+1)
+  sta PT2
+  sty PT2 +1
+  rts
+
+
 
 
 ; ==============================================================
@@ -1904,9 +2086,9 @@ SEL_LOAD
 SELO_2
   lda (CHRPTR),y
   beq SELO_5
-  cmp #34                                 ; "
+  cmp #34                               ; "
   beq SELO_5
-  sta (PT1),y                             ; SAVE FILENAME
+  sta (PT1),y                           ; SAVE FILENAME
   iny
   dex
   bne SELO_2
@@ -1915,18 +2097,18 @@ SELO_5
   beq SELO_E
   tya
   pha
-  txa 
+  txa
   beq SELO_7a
   lda #0
 SELO_7
   iny
-  sta (PT1),y                             ; FILL FILENAME WITH 0
+  sta (PT1),y                           ; FILL FILENAME WITH 0
   dex
   bne SELO_7
 SELO_7a
   tay
   pla
-  sta (PT1),y                             ; SAVE FILENAME LENGTH
+  sta (PT1),y                           ; SAVE FILENAME LENGTH
   sec
   adc CHRPTR
   sta CHRPTR
@@ -1936,17 +2118,17 @@ SELO_8
   jsr CHRGET
   jsr CHKCOM
   bcs SELO_8a
-  cmp #"B"
+  cmp #"B"                              ;BASIC FILE
   beq SELO_9
-  cmp #"C"
+  cmp #"C"                              ;CARTRIDGE FILE
   beq SELO_9
   ;cmp #"@"
   ;beq SELO_9
 SELO_8a
-  lda #"P"
+  lda #"P"                              ;NORMAL PROG
 SELO_9
   ldy #LDBUF_TYP
-  sta (PT1),y                             ; PROGRAM TYPE
+  sta (PT1),y                           ; PROGRAM TYPE
   jsr CHRGET
   jsr CHKCOM
   bcs SELO_9a
@@ -1957,10 +2139,10 @@ SELO_9a
   tax
 SELO_9b
   ldy #LDBUF_LAD +1
-  sta (PT1),y                             ; LOAD ADR HIGH
+  sta (PT1),y                           ; LOAD ADR HIGH
   dey
   txa
-  sta (PT1),y                             ; LOAD ADR LOW
+  sta (PT1),y                           ; LOAD ADR LOW
 
   inc DL_CNTLDR
   clc
@@ -1974,184 +2156,138 @@ SELO_E
 
 
 
-
-; ==============================================================
-; MENU FOOTER
-; ==============================================================
-
-MENUSCREEN
-  dc.b HOME,YELLOW, CR, CR
-;  dc.b 210,210,210,210,210,210,210,210,210,210,210
-  dc.b 96,96,96,96,96,96,96,96,96,96,96
-  dc.b 96,96,96,96,96,96,96,96,96,96,96
-  dc.b CR, CR, CR, CR, CR, CR, CR, CR, CR
-  dc.b CR, CR, CR, CR, CR, CR, CR, CR, CR
-  dc.b 96,96,96,96,96,96,96,96,96,96,96
-  dc.b 96,96,96,96,96,96,96,96,96,96,96, CR
-;  dc.b 197,197,197,197,197,197,197,197,197,197,197,CR
-
-;      "---- DISK LOADER -----"
-  dc.b RVSON,"f1",RVSOFF,"/",RVSON,"f3",RVSOFF,":pGuP/dWN "
-  dc.b RVSON,"f8",RVSOFF,":eXIT",CR
-  dc.b RVSON,"f5",RVSOFF,"/",RVSON,"f7",RVSOFF,":fIRST-/lAST lINE"
-  dc.b HOME,$00
-
-
-
 ; =====================================================================
 ; MENU LOADER
 ; Schaltet in ROM Modus und lädt 1 oder mehrere Dateien in den Speicher
 ; Lade Instruktionen stehen in der Tabelle DL_LDBUF
 ; =====================================================================
 
-LOADER
+LOADER  subroutine
   ;LOADER PARAM       :: "filename",B|P|C [,$adress]     B=BASIC Code,P=Program,C=Cartridge
-  lda #<(DL_LDBUF)
-  ldy #>(DL_LDBUF)
-  sta PT2
-  sty PT2 +1
+  jsr SET_PT2_LDBUF
 
-LOAD_2
-  ldy #LDBUF_LAD
-  lda (PT2),y                             ; LOAD ADR LOW
-  sta LOADPTR
-  iny
-  lda (PT2),y                             ; LOAD ADR HIGH
-  sta LOADPTR +1
-  beq LOAD_2B
-
-  lda #$ff
-LOAD_2B
-  tay                                     ; SA
-  iny
-  lda #1
-  ldx F_CURDEV                          ; device#
-  jsr SETFNUM
-
-  ldy #LDBUF_LEN
-  lda (PT2),y                             ; FILENAME LEN
-  ldy PT2 +1
-  ldx PT2
-  inx
-  bne LOAD_2D
-  iny
-LOAD_2D
-  jsr SETFNAM
-
-
-  ;lda #WHITE
-  ;jsr CHROUT
-  ldy #LDBUF_TYP
-  lda (PT2),y
-  tax
-
-  ;cmp #"@"
-  ;bne LOAD_3
-
-  ;lda #<MSG_DOS
-  ;ldy #>MSG_DOS
-  ;jmp LOAD_7
-;LOAD_3
-
-
-LOAD_3A
+.2
+  jsr PRINT_LOADMSG                     ;SET LOAD INFO, PRINT MESSAGE
+  jsr GET_FILETYP
   cpx #"B"
-  bne LOAD_3B
+  bne .3
 
-  lda #<MSG_LOADBASIC
-  ldy #>MSG_LOADBASIC
-  jsr PRINT_LOADING
+  jsr LOAD_BASIC_2
+  jmp .4
 
-  jsr LOAD_BASIC
-  jmp LOAD_4
-
-LOAD_3B
-  cpx #"C"
-  bne LOAD_3C
-
-  lda LOADPTR +1
-  bne LOAD_3B2
-  lda #$a0                                ;DEFAULT CARTRIDGE ADDRESS
-  sta LOADPTR +1
-LOAD_3B2
-  lda #<MSG_LOADCART
-  ldy #>MSG_LOADCART
-  jsr PRINT_LOADING
-
-  ldy #2
-  sty SY_SA
+.3
   jsr MY_IECLOAD
-  jmp LOAD_4
+.4
+  bcs .ERR
 
-LOAD_3C
-  lda #<MSG_LOADPROG
-  ldy #>MSG_LOADPROG
-  jsr PRINT_LOADING
-  jsr MY_IECLOAD
-LOAD_4
-  bcs LOAD_ERR
-  ;clc
-  lda #LDBUF_END
-  adc PT2
-  sta PT2
-  bcc LOAD_10
-  inc PT2 +1
+  jsr ADD_PT2_LDBUF                     ;NEXT LDBUF
 
-LOAD_10
   dec DL_CNTLDR
-  beq LOAD_E
-  jmp LOAD_2
-
-LOAD_E
+  bne .2
+.E
   jsr PRINT_IO
   clc
   rts
 
+.ERR
 LOAD_ERR
-  lda #<MSG_LOADERR
-  ldy #>MSG_LOADERR
-  jsr STROUT
+  jsr PRINT_LOADERR
   jsr WAITSPACE
   sec
   rts
 
 
 
-PRINT_LOADING
-  jsr STROUT
 
-  ;ldy #LDBUF_LAD +1
-  ;lda (PT2),y                             ; LOAD ADR HIGH
-  ;beq LOAD_6
-
-  ;lda #<MSG_LOADAT
-  ;ldy #>MSG_LOADAT
-  ;jsr STROUT
-
-  ;ldx LOADPTR
-  ;lda LOADPTR +1
-  ;jsr HEXOUT
-
-LOAD_6
-  lda #<MSG_LOADFN1
-  ldy #>MSG_LOADFN1
-LOAD_7
-  jsr STROUT
-
-
-  ldy #LDBUF_FN
-LOAD_8
+  ;PRINT LOAD MESSAGE
+PRINT_LOADMSG subroutine
+  ldy #LDBUF_LAD
   lda (PT2),y                             ; LOAD ADR LOW
-  beq LOAD_9
-  jsr CHROUT
+  sta LOADPTR
   iny
-  bne LOAD_8
+  lda (PT2),y                             ; LOAD ADR HIGH
+  sta LOADPTR +1
+  beq .2B
 
-LOAD_9
-  lda #<MSG_LOADFN2
-  ldy #>MSG_LOADFN2
-  jmp STROUT
+  lda #$ff
+.2B
+  tay                                     ; SA
+  iny
+  lda #1
+  ldx F_CURDEV                          ; device#
+  jsr SETFNUM
 
+  jsr GET_FILETYP
+  cpx #"B"
+  bne .3B
+
+  jsr PRINT_LOADING
+  dc.b "LOAD BASIC PROG",0
+  jmp LOAD_BASIC_START
+
+.3B
+  cpx #"C"
+  bne .3C
+
+  lda LOADPTR +1
+  bne .3B2
+  lda #$a0                                ;DEFAULT CARTRIDGE ADDRESS
+  sta LOADPTR +1
+.3B2
+  ldy #2
+  sty SY_SA
+  jsr PRINT_LOADING
+  dc.b "LOAD CART",0
+  rts
+
+.3C
+  jsr PRINT_LOADING
+  dc.b "LOAD PROG",0
+  rts
+
+GET_FILETYP subroutine
+  ldy #LDBUF_TYP
+  lda (PT2),y
+  tax
+  rts
+
+
+
+
+  ;NEXT LOAD HEADER
+ADD_PT2_LDBUF subroutine
+  clc
+  lda #LDBUF_END
+  adc PT2
+  sta PT2
+  bcc .0
+  inc PT2 +1
+.0
+  rts
+
+
+  ;PRINT LOAD MESSAGE, GET FILENAME
+PRINT_LOADING subroutine
+  jsr SPAR_GETPTR
+  jsr SPAR_PRINTSTRING_2
+
+  jsr SPAR_PRINTSTRING
+  dc.b CR, "  ",60,0
+
+  ldy #LDBUF_LEN
+  lda (PT2),y                             ; FILENAME LEN
+  ldy PT2 +1
+  ldx PT2
+  inx
+  bne .2
+  iny
+.2
+  jsr SETFNAM                           ;SET FILENAME
+  jsr STRNOUT                           ;PRINT FILENAME
+
+  lda #62                               ;">"
+  ldx #CR
+  jmp CHROUT2
 
 
 
@@ -2164,11 +2300,11 @@ SETFNUM = $ffba
 SETFNAM = $ffbd
 LOAD    = $ffd5
 
-BASCLR2 = $c659
-BASCLR  = $c660
-PGMLINK = $c533
+SY_BASCLR2 = $c659
+SY_BASCLR  = $c660
+SY_PGMLINK = $c533
 
-LOAD_MENU
+LOAD_MENU subroutine
   ldx #<(MSG_LOADER)
   ldy #>(MSG_LOADER)
   lda #6
@@ -2183,7 +2319,13 @@ LOAD_MENU
   jsr LOAD
   jmp BASLOAD_END
 
-LOAD_BASIC
+LOAD_BASIC subroutine
+  jsr LOAD_BASIC_START
+LOAD_BASIC_2
+  jsr MY_IECLOAD
+  jmp BASLOAD_END
+
+LOAD_BASIC_START subroutine
   lda #1
   ldx F_CURDEV                          ; device#
   ldy #0
@@ -2192,8 +2334,8 @@ LOAD_BASIC
   ldy BASSTRT +1          ;Start hi#
   stx LOADPTR
   sty LOADPTR +1
-  jsr MY_IECLOAD
-  jmp BASLOAD_END
+  rts
+
 
 
 
@@ -2219,20 +2361,1040 @@ MSG_RUN
 MSG_LOADER
   dc.b "LOADER",0
 
-MSG_LOADCART
-  dc.b "LOAD CART",0
-MSG_LOADBASIC
-  dc.b "LOAD BASIC PROG",0
-MSG_LOADPROG
-  dc.b "LOAD FILE",0
-MSG_LOADFN1
-  dc.b CR, "  ",60,0
-MSG_LOADFN2
-  dc.b 62,CR,0
 MSG_DOS
   dc.b "@ ",60,0
 ;  lda #60                                 ;"<"
 ;  lda #62                                 ;">"
+
+
+
+
+
+
+; ========================================================================
+; FIRMWARE FLASHER
+; Schaltet in den RAM Modus
+; Ladet die Firmware Datei (FE3FIRMWARE) in den Speicher ab $2
+; Flashed den Bereich $2 bis $4 in den EEPROM
+; ========================================================================
+
+
+FLLO_STARTADR = $2000
+
+
+FIRMW_FLASHER subroutine
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  jsr SetVicMemConfig
+
+  jsr SY_INITMSG                        ; INIT Message (e404)
+  jsr CROUT
+
+  ;SET FILENAME PARAM
+  jsr SPAR_GETSTRING
+  dc.b 11,"FE3FIRMWARE",0
+  sta PT2
+  sty PT2 +1
+
+  ;SET FILE PARAM
+  lda #2                                ; SA! - CARTRIDGE
+  jsr LOAD_AT
+  bcs .err
+  
+
+  ;FLASH FIRMWARE
+  jsr MOVE_FLASH_FW
+  lda #<FLLO_STARTADR
+  ldy #>FLLO_STARTADR
+  jsr FLASHER
+
+.err
+  jsr WAIT_KEY
+  jmp UTIL_MENU
+
+
+
+
+
+
+; ========================================================================
+; CART FLASHER
+; Schaltet in den RAM Modus
+; Ladet die Loaderkonfig Datei (LOADER) in den BASIC Speicher
+; Baut eine String Zeigertabelle auf ab TBL_NAMES ($6)
+; Führt die Menü Auswahl Prozedur aus
+; ========================================================================
+
+
+
+  ;-------------- PRINT DLOADER SCREEN AND FLASH SELECTED FILES
+
+  subroutine
+.00
+  jsr MENU_SEL
+  bcc .01
+  jsr MENU_FLASHER
+.01
+
+CART_FLASHER
+  jsr INIT_CART                         ; Screen Colors
+  jsr SPAR_PRINTSTRING
+  dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- cART fLASHER ----",CR,CR,0
+
+  jsr DLOADER1
+  cpx #13                               ;CR
+  beq .00
+  jmp UTIL_MENU
+
+
+
+  ;-------------- EXECUTE SELECTED MENU
+
+MENU_FLASHER subroutine
+  lda DL_CNTLDR                         ;NUMBER OF FILES
+  beq .exit
+
+  jsr CLROUT                            ;CLEAR SCREEN
+
+  ldx BIP_CMD
+  beq .exit
+  cpx #TOK_RELO                         ;RELOAD
+  beq .exit
+
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  jsr SetVicMemConfig
+
+  jsr SY_INITMSG                        ; INIT Message (e404)
+  jsr CROUT
+
+  ;SAVE FILE COUNT
+  lda DL_CNTLDR
+  sta TBL_CLBUF +CLBUF_CNT
+
+  ;GET ENTRY COUNT
+  jsr FLASH_SEARCH_END                   ;SEARCH LAST ENTRY
+  txa
+  bmi .errfull
+
+  ;LOAD FILES TO RAM DISK
+  jsr RAMD_INIT                         ; INIT RAM DISK
+  jsr FLSH_LOADER                       ; LOAD FILES
+  bcs .exit
+
+  jsr RAMD_SIZE                         ; GET LENGTH OF PACKAGE
+  sta LOADEND +1
+  stx LOADEND
+  sta TBL_CLBUF +CLBUF_PLEN +1
+  stx TBL_CLBUF +CLBUF_PLEN
+
+  ;PRINT PACKAGE SIZE
+  jsr SPAR_PRINTSTRING
+  dc.b 13,"PACKAGE SIZE ",0
+  lda LOADEND +1
+  ldx LOADEND
+  jsr HEXOUT
+
+FLASH_PACKAGE_DEBUG
+  jsr FLASH_PACKAGE                     ; FLASH PACKAGE
+  bcs .errflash
+
+  jsr FLASH_ENTRY                       ; FLASH CATALOG
+  bcs .errflash
+
+.wait
+  jsr WAIT_KEY
+.exit
+  jmp CART_FLASHER
+
+
+
+.errfull
+  jsr SPAR_PRINTSTRING
+  dc.b CR,RED,"CATALOG FULL!",0
+  clc
+  bcc .exit
+
+.errflash
+  jsr SPAR_PRINTSTRING
+  dc.b CR,RED,"FLASH ERROR!",0
+  clc
+  bcc .wait
+
+
+  ;WRITE PACKAGE INTO FLASH
+FLASH_PACKAGE subroutine
+  jsr SPAR_PRINTSTRING
+  dc.b CR,"FLASHING PACKAGE...",0
+
+  ;------------------------
+  ;PREPARE TO FLASH PACKAGE
+  ;------------------------
+  jsr RAMD_INIT                         ;INIT RAM DISK
+  jsr MOVE_FLASH_FW                     ;PREPARE FLASH CODE
+
+  jsr FLASH_SEARCH_END                  ;SEARCH LAST ENTRY
+  jsr FLASH_EADR                        ;GET FLASH START ADDRESS
+  sta TBL_CLBUF +CLBUF_SADR +1          ;ADR HI
+  stx TBL_CLBUF +CLBUF_SADR             ;ADR LO
+  sty TBL_CLBUF +CLBUF_SBANK            ;BANK
+
+  ;PREPARE RAMD WRITE TO FLASH
+  stx SAVESTART
+  sta SAVESTART +1
+  tya
+  ora #FEMOD_ROM_P                      ;PROG MODE
+  sta __flash_BANK
+
+  ldy #0
+.flash
+  lda LOADEND
+  bne .05
+  lda LOADEND +1
+  beq .exit
+  dec LOADEND +1
+.05
+  dec LOADEND
+  jsr RAMD_GETC                         ;BYTE FROM RAMDISK
+
+  jsr FlashCodeWriteXP
+  bcs .rts
+  jsr FlashCodeWriteXpInc               ;INCREMENT ADDRESS
+  jmp .flash
+
+.exit
+  ;SET END BANK/ADDRESS
+  lda __flash_BANK
+  and #$0f
+  ldx SAVESTART
+  ldy SAVESTART +1
+
+  sty TBL_CLBUF +CLBUF_EADR +1          ;ADR HI
+  stx TBL_CLBUF +CLBUF_EADR             ;ADR LO
+  sta TBL_CLBUF +CLBUF_EBANK            ;BANK
+  clc                                   ;OK!
+  bcc PRINT_OK
+
+.rts
+  rts
+
+
+
+  ;WRITE ENTRY INTO CATALOG
+FLASH_ENTRY subroutine
+  jsr SPAR_PRINTSTRING
+  dc.b CR,"FLASHING CATALOG...",0
+
+  jsr FLASH_SEARCH_END                  ;SEARCH LAST ENTRY
+  txa                                   ;ENTRY COUNT
+  beq .00
+  jsr ADD_CLBUF                         ;NEXT ENTRY (FREE SLOT)
+.00
+  ;jsr FLASH_EADR                       ;GET FLASH ADDRESS
+  lda LOADPTR
+  ldx LOADPTR +1
+  sta SAVESTART
+  stx SAVESTART +1
+
+  lda #FEMOD_ROM_P                      ;PROG MODE, BANK 0
+  sta __flash_BANK
+
+  ldy #0
+.04
+  lda TBL_CLBUF,y
+  jsr FlashCodeWriteXP
+  bcs .rts
+
+  iny
+  cpy #CLBUF_END
+  bne .04
+
+PRINT_OK
+  jsr SPAR_PRINTSTRING
+  dc.b GREEN,"OK",BLUE,0
+  clc
+.rts
+  rts
+
+
+
+; =====================================================================
+; FLASH LOADER
+; lädt eine oder mehrere Dateien in den Speicher ab $2
+; kopiert die Ladeanweisungen + Datei in den Super RAM
+; =====================================================================
+
+
+  ;FLASH LOADER PARAM       :: "filename",B|P|C [,$adress]     B=BASIC Code,P=Program,C=Cartridge
+FLSH_LOADER subroutine
+  jsr WRITE_CLHDR                       ;WRITE PACKAGE HEADER
+
+  jsr SET_PT2_LDBUF
+.00
+  lda #2                                ; SA=2: CARTRIDGE - WHOLE FILE
+  jsr LOAD_AT
+  bcs .err
+
+  ;CALC FILE LENGTH
+  ;  ldx LOADEND
+  ;  ldy LOADEND +1
+  tya
+  sec
+  sbc #>FLLO_STARTADR
+  sta LOADEND +1
+
+
+  ;STORE FILE LENGTH INTO LOAD BUFFER
+  ldy #LDBUF_FLEN +1
+  sta (PT2),y                           ; FILE LENGTGH HI
+  dey
+  txa
+  sta (PT2),y                           ; FILE LENGTGH LO
+
+
+
+  ;COPY LOAD BUFFER INTO RAMDISK
+  ldx #LDBUF_END
+  ldy #0
+.05
+  lda (PT2),y
+  jsr RAMD_PUTC
+  iny
+  dex
+  bne .05
+
+
+  ;COPY FILE INTO RAMDISK
+  jsr SET_LPT_STARTADR
+  ldy #0
+.07
+  lda LOADEND
+  bne .06
+  lda LOADEND +1
+  beq .09
+  dec LOADEND +1
+.06
+  dec LOADEND
+
+  lda (LOADPTR),y
+  jsr RAMD_PUTC
+
+  iny
+  bne .07
+  inc LOADPTR +1
+  bne .07
+
+.09
+
+
+  ;GOTO NEXT FILE
+  jsr ADD_PT2_LDBUF
+  dec DL_CNTLDR
+  bne .00
+
+.exit
+  jsr PRINT_IO
+  clc
+  rts
+
+.err
+  jmp LOAD_ERR
+
+
+
+ ;------------
+SET_PT2_LDBUF subroutine
+  ;LOADER PARAM       :: "filename",B|P|C [,$adress]     B=BASIC Code,P=Program,C=Cartridge
+  lda #<(DL_LDBUF)
+  ldy #>(DL_LDBUF)
+SET_PT2_AY
+  sta PT2
+  sty PT2 +1
+  rts
+
+;------------
+SET_LPT_STARTADR subroutine
+  lda #<FLLO_STARTADR
+  ldy #>FLLO_STARTADR
+SET_LPT_AY
+  sta LOADPTR
+  sty LOADPTR +1
+  rts
+
+
+  ;LOAD FILE INTO BUFFER
+LOAD_AT subroutine
+  tay                                   ; SA
+  ldx F_CURDEV                          ; device#
+  jsr SETFNUM
+
+  jsr PRINT_LOADING
+  dc.b "LOAD FILE",0
+
+  jsr SET_LPT_STARTADR
+
+  ;LOAD FILE AT (FLLO_STARTADR)
+  jsr MY_IECLOAD
+  bcc .ok
+PRINT_LOADERR
+.err
+  jsr SPAR_PRINTSTRING
+  dc.b 13,"LOAD ERROR!",13,0
+  sec
+.ok
+  rts
+
+
+
+
+
+;BIP_CMD     = $0293                     ;COMMAND BYTE
+;BIP_IOBASE  = BIP_CMD +1                ;BASE FOR IO2 REGISTER 1 AND 2
+;BIP_RUNADR  = BIP_CMD +3                ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
+
+
+
+
+  ;WRITE PACKAGE HEADER
+WRITE_CLHDR subroutine
+  ldy #0
+.00
+  lda BIP_CMD,y
+  jsr RAMD_PUTC
+  iny
+  cpy #CLHDR_END
+  bcc .00
+  rts
+
+
+
+
+; ========================================================================
+; CART LOADER
+; Schaltet in den RAM Modus
+; Ladet die Flash File List in den BASIC Speicher
+; Baut eine String Zeigertabelle auf ab TBL_NAMES ($6)
+; Führt die Menü Auswahl Prozedur aus
+; ========================================================================
+
+  ;-------------- PRINT CLOADER SCREEN AND START SELECTED FILES
+
+  subroutine
+.00
+  jsr MENU_CSEL
+  bcs .01
+  jsr MENU_CLOADER
+.01
+
+CART_LOADER
+  jsr INIT_CART                         ; Screen Colors
+  jsr SPAR_PRINTSTRING
+  dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- cART  lOADER ----",CR,CR,0
+
+  jsr CLOADER1
+  cpx #13                               ;CR
+  beq .00
+  jmp SSCREEN
+
+
+
+CLOADER1 subroutine
+  jsr COPYROM                           ; COPY FIRMWARE TO SRAM
+  bcs .02                               ; ==> RAM OK
+
+  jsr SPAR_MSGBOX
+  dc.b 2, 3, RED, "ram eRROR at $a ...",0
+.exit
+  ldx #0
+  rts
+
+.02
+  jsr MENU_INIT
+  lda #1
+  sta FLGCOM                             ;STRING OFFSET
+  jsr MENU_CATALOG
+  ;bcs .exit
+
+  jsr MENU_HANDLER
+
+  clv
+  bvc CLOADER1
+
+
+;-------------- LOAD CATALOG LOADER FILE
+MENU_CATALOG subroutine
+  lda #>$2000
+  ldy #<$2000
+  ldx #16                               ; copy 16 pages
+  jsr COPYROM_2                         ; COPY CATALOG TO SRAM
+
+  ;jsr FLASH_SEARCH_END
+;  jmp BLD_TABLE_CAT
+
+
+
+  ;----BUILD NAME TABLE FROM CATALOG
+BLD_TABLE_CAT subroutine
+  jsr BLD_TABLE_INIT                    ;INITIALIZE BLD TABLE
+  jsr SET_CLO_START                     ;SET CLOADER TABLE ADDRESS
+  ldy #0
+.00
+  lda (LOADPTR),y
+  cmp #$ff
+  beq .tblend                           ;TABLE END!!
+
+  lda LOADPTR
+  sta (PT2),y
+  jsr INC_PT2
+
+  lda LOADPTR +1
+  sta (PT2),y
+  jsr INC_PT2
+
+  jsr ADD_CLBUF
+
+  inc TBL_NAMES
+  bpl .00
+
+.tblend
+  rts
+
+
+
+
+
+  ;INCREMENT PT2
+INC_PT2 subroutine
+  inc PT2
+  bne .2
+  inc PT2 +1
+.2
+  rts
+
+
+
+  ;INCREMENT LOADPTR
+INC_LOADPTR subroutine
+  inc LOADPTR
+  bne .2
+  inc LOADPTR +1
+.2
+  rts
+
+
+
+  ;---EXECUTE SELECTED MENU ENTRY
+MENU_CSEL subroutine
+  jsr MENU_SEL_INIT                     ;SET PT2 TO ENTRY STRING
+  bcs .err
+
+  ;COPY CATALOG ENTRY
+COPY_CATALOG
+  ldy #0
+.1
+  lda (PT2),y
+  sta TBL_CLBUF,y
+  iny
+  cpy #CLBUF_END                        ;LENGTH
+  bne .1
+  clc
+.err
+  rts
+
+
+
+
+  ;---LOAD SELECTED MENU ENTRY
+MENU_CLOADER subroutine
+  ;SAVE FILE COUNT
+  lda TBL_CLBUF +CLBUF_CNT
+  bne .1
+  rts
+.1
+  sta DL_CNTLDR
+
+  ;------------------------
+  ;PREPARE TO READ PACKAGE
+  ;------------------------
+  jsr RAMD_INIT                         ;INIT RAM DISK
+  lda #FEMOD_ROM                        ;ROM MODUS
+  sta __RAMD_READ_MODE
+
+  lda #FEMOD_ROM                        ;ROM MODUS
+  ora TBL_CLBUF +CLBUF_SBANK            ;+ BANK
+  tay
+  lda TBL_CLBUF +CLBUF_SADR +1
+  ldx TBL_CLBUF +CLBUF_SADR
+  sta __RAMD_READ_ADR +1                ;ADR HI
+  stx __RAMD_READ_ADR                   ;ADR LO
+  sty __RAMD_READ_BANK                  ;BANK
+  jsr READ_CLHDR                        ;RESTORE PACKAGE HEADER
+
+  jsr SET_MEM_CONFIG
+  jsr SY_INITMSG                        ; INIT Message (e404)
+  jsr SPAR_PRINTSTRING
+  dc.b CR,CR,"LOADING PACKAGE...",CR,0
+
+  lda #FEMOD_ROM
+  sta IO_FINAL                          ; EEPROM!
+
+.loadfile
+  jsr READ_LDBUF                        ;RESTORE FILE LOAD BUFFER
+  jsr READ_FILE                         ;READ FILE FROM RAMDISK
+
+  dec DL_CNTLDR
+  bne .loadfile
+
+  jsr PRINT_IO                          ;PRINT IO SETTING
+;  jsr WAIT_KEY
+  jmp EXEC_PACKAGE
+
+
+
+  ;RESTORE PACKAGE HEADER
+READ_CLHDR subroutine
+  ldy #0
+.00
+  jsr RAMD_GETC
+  sta BIP_CMD,y
+  iny
+  cpy #CLHDR_END
+  bcc .00
+  rts
+
+
+
+  ;RESTORE FILE LOAD BUFFER
+READ_LDBUF subroutine
+  ldy #0
+.00
+  jsr RAMD_GETC
+  sta DL_LDBUF,y
+  iny
+  cpy #LDBUF_END
+  bcc .00
+  rts
+
+
+
+  ;READ FILE FROM RAMDISK
+READ_FILE subroutine
+  jsr SET_PT2_LDBUF
+  jsr PRINT_LOADMSG                     ;SET LOAD INFO, PRINT MESSAGE
+
+  lda DL_LDBUF +LDBUF_FLEN
+  sta LOADEND                           ;FILE LENGTH
+  lda DL_LDBUF +LDBUF_FLEN +1
+  sta LOADEND +1                        ;FILE LENGTH HI
+
+  ;ldx DL_LDBUF +LDBUF_TYP
+  ;cpx #"C"
+  ;beq .0
+
+  ldx SY_SA                             ;SA
+  cpx #2
+  beq .0                                ;CARTRIDGE
+
+  lda LOADEND                           ;SUBTRACT LOAD ADDRESS
+  sec
+  sbc #2
+  sta LOADEND
+  bcs .01
+  dec LOADEND +1
+.01
+
+  jsr RAMD_GETC                         ;SKIP LOAD ADDRESS
+  tay
+  jsr RAMD_GETC
+  dex
+  bne .0                                ;SA=0: -->
+  sta LOADPTR +1
+  sty LOADPTR                           ;LOAD ADDRESS FROM FILE
+.0
+  ldx #LOADPTR
+  jsr PRINT_ATADR_2                     ;PRINT LOADING FROM $xxxx
+  ldy #0
+.1
+  lda LOADEND
+  bne .2
+  lda LOADEND +1
+  beq .le
+  dec LOADEND +1
+.2
+  dec LOADEND
+  jsr RAMD_GETC
+  sta (LOADPTR),y
+  inc LOADPTR
+  bne .1
+  inc LOADPTR +1
+  bne .1
+
+.le
+  ldx #LOADPTR
+  jsr PRINT_TOADR_2                     ;PRINT TO $xxxx
+
+  ldx LOADPTR
+  ldy LOADPTR +1
+  stx LOADEND                           ;LOAD END POINTER FOR 3d LABY ...
+  sty LOADEND +1
+  lda DL_LDBUF +LDBUF_TYP
+  cmp #"B"
+  bne .nobas                            ;BASIC PROG? --> no
+  jsr BASLOAD_END_2                     ;RELINK BASIC
+.nobas
+  rts
+
+
+
+
+DL_LDBUF   = TBL_DATA +12               ;LOAD BUFFER - bis zu 4 x DATEI,OPTIONS
+LDBUF_LEN  = 0                          ;OFFSET FILENAME LENGTH
+LDBUF_FN   = 1                          ;OFFSET FILENAME
+LDBUF_TYP  = 17                         ;OFFSET TYPE: B=BASIC, P=PROGRAM, C=CARTRIDGE
+LDBUF_LAD  = 18                         ;OFFSET LOAD ADRESS
+LDBUF_FLEN = 20                         ;OFFSET FILE LENGTH
+LDBUF_END  = 22                         ;STRUCT LDBUF LEN
+
+
+
+CLBUF_LEN   = 0                         ;OFFSET ENTRY NAME LENGTH
+CLBUF_NAM   = 1                         ;OFFSET ENTRY NAME
+CLBUF_CNT   = 21                        ;OFFSET FILES COUNT
+CLBUF_PLEN  = 22                        ;OFFSET PACKAGE LENGTH
+CLBUF_SADR  = 24                        ;OFFSET START ADDRESS
+CLBUF_SBANK = 26                        ;OFFSET START BANK
+CLBUF_EADR  = 27                        ;OFFSET END ADDRESS
+CLBUF_EBANK = 29                        ;OFFSET END BANK
+CLBUF_END   = 32                        ;STRUCT LDBUF LEN
+
+CLHDR_CMD   = 0                         ;OFFSET START COMMAND (SYS/RES/RUN)
+CLHDR_IO1   = 1                         ;OFFSET IO REGISTER 1
+CLHDR_IO2   = 2                         ;OFFSET IO REGISTER 2
+CLHDR_ADR   = 3                         ;OFFSET START ADDRESS
+CLHDR_END   = 5                         ;STRUCT LDHDR LEN
+
+
+; ========================================================================
+; FLASH STATISTIC
+; get info: number of entries, bytes free, bytes allocated
+; print info, wait for key
+; ========================================================================
+
+CLO_STARTADR = $2000
+
+FLASH_INFO subroutine
+  ;jsr CLROUT                            ;CLEAR SCREEN
+  jsr SPAR_PRINTSTRING
+  dc.b CLRHOME,FONT2,YELLOW
+  dc.b "## fLASH sTATUS ##",13,13,13
+  dc.b WHITE,"eNTRIES: ",0
+
+  jsr FLASH_SEARCH_END                   ;SEARCH LAST ENTRY
+  txa
+  jsr HEXOUT2
+
+  jsr SPAR_PRINTSTRING
+  dc.b 13,13,13,"bYTES FREE:$",0
+  jsr FLASH_FREE                        ;BYTES FREE
+  jsr HEXOUT_LA
+
+  jsr SPAR_PRINTSTRING
+  dc.b 13,13,"ALLOCATED: $",0
+  jsr FLASH_ALLOC                       ;BYTES ALLOCATED
+  jsr HEXOUT_LA
+  jmp WAIT_KEY
+
+
+
+
+  ;PRINT LARGE ADDRESS (24 bit)
+HEXOUT_LA subroutine
+  lda LEN_FNAM
+  jsr HEXOUT2
+  lda PTR_FNAM +1
+  ldx PTR_FNAM
+  jmp HEXOUT4
+
+
+
+  ;SEARCH LAST ENTRY / COUNT IN XR
+FLASH_SEARCH_END subroutine
+  lda #FEMOD_ROM                        ;ROM MODUS
+  sta IO_FINAL
+  jsr SET_CLO_START                     ;SET CLOADER TABLE ADDRESS
+  ldx #0
+  ldy #0
+  beq .00
+
+.03
+  jsr .07
+.00
+  lda (LOADPTR),y
+  cmp #$ff
+  beq .tblend                           ;TABLE END!!
+  inx
+  tya
+  bne .03
+
+  ldy #CLBUF_END                        ;ENTRY LENGTH
+  bne .00
+
+.tblend
+  rts
+
+
+ADD_CLBUF
+  lda #CLBUF_END                        ;ENTRY LENGTH
+.07
+  clc
+  adc LOADPTR
+  sta LOADPTR
+  bcc .08
+  inc LOADPTR +1
+.08
+  rts
+
+
+
+  ;CALC PACKAGE START ADDRESS
+FLASH_SADR subroutine
+  ldy #CLBUF_SADR
+  bne .00
+
+  ;CALC PACKAGE END ADDRESS
+FLASH_EADR
+  ldy #CLBUF_EADR
+.00
+  lda (LOADPTR),y
+  tax
+  iny
+  lda (LOADPTR),y
+  pha
+  iny
+  lda (LOADPTR),y
+  cmp #$ff
+  bne .01
+
+  pla
+  lda #>$2000                           ;BLK 1 :: START OF CATALOG
+  ldx #<$2000
+  ldy #1
+  bne .02
+
+.01
+  and #$0f                              ;BANK
+  tay
+  pla
+.02
+  sta PTR_FNAM +1                       ;ADR HI
+  stx PTR_FNAM                          ;ADR LO
+  sty LEN_FNAM                          ;BANK
+  rts
+
+
+
+  ;CALC ALLOCATED BYTES IN FLASH (YR/XR/AC)
+FLASH_FREE subroutine
+  jsr FLASH_ALLOC
+  sec
+  lda #0                                ;BUILD COMPLEMENT
+  sbc PTR_FNAM
+  sta PTR_FNAM
+  lda #$80
+  sbc PTR_FNAM +1
+  sta PTR_FNAM +1
+  lda #7
+  sbc LEN_FNAM
+  sta LEN_FNAM
+  rts
+
+
+
+  ;CALC FREE BYTES IN FLASH (YR/XR/AC)
+FLASH_ALLOC subroutine
+  jsr FLASH_EADR
+  lda PTR_FNAM +1                       ;ADR HI
+  jsr CALC_BLK2OFFS                     ;BLOCK ADDRESS TO OFFSET
+  dec LEN_FNAM
+  lsr LEN_FNAM                          ;64K BLOCK - HI HI
+  bcc .04
+  ora #$80                              ;ADD 32K ON ODD BANK
+.04
+  sta PTR_FNAM +1                       ;ADR HI
+  rts
+
+
+
+  ;---- SET CLOADER TABLE ADDRESS
+SET_CLO_START subroutine
+  lda #<CLO_STARTADR
+  ldy #>CLO_STARTADR
+  jmp SET_LPT_AY
+
+
+
+  ;---- BLOCK ADDRESS TO OFFSET
+CALC_BLK2OFFS subroutine
+  cmp #$a0
+  bcc .00
+  ;adr $A to $C
+  sec
+  sbc #$20
+.00
+  ;adr $2 to $8
+  sec
+  sbc #$20
+  and #$7f
+  rts
+
+
+
+
+    ;CLOADER HEADER (CLOAD BUFFER)
+CLBUF_LEN   = 0                         ;OFFSET ENTRY NAME LENGTH
+CLBUF_NAM   = 1                         ;OFFSET ENTRY NAME
+CLBUF_CNT   = 21                        ;OFFSET FILES COUNT
+CLBUF_PLEN  = 22                        ;OFFSET PACKAGE LENGTH
+CLBUF_SADR  = 24                        ;OFFSET START ADDRESS
+CLBUF_SBANK = 26                        ;OFFSET START BANK
+CLBUF_EADR  = 27                        ;OFFSET END ADDRESS
+CLBUF_EBANK = 29                        ;OFFSET END BANK
+CLBUF_END   = 32                        ;STRUCT LDBUF LEN
+
+
+
+; ========================================================================
+; RAM DISK
+; ========================================================================
+
+  ;PREPARE FOR READ
+RAMD_INIT subroutine
+  ldy #(__RAMDISK_E - __RAMDISK)
+  lda #>__RAMDISK
+  ldx #<__RAMDISK
+  jmp COPY_PROC
+
+
+  ;GET SIZE
+RAMD_SIZE subroutine
+  lda __RAMD_WRITE_BANK
+  and #15
+  tay
+  dey
+  dey
+
+  lda __RAMD_WRITE_ADR +1
+  cmp #$80
+  bcc .08
+
+  sbc #($A0 - $80)
+.08
+  sec
+  sbc #>FLLO_STARTADR
+
+  ldx __RAMD_WRITE_ADR
+  rts
+
+
+  ;-----------------------
+RAMD_PUTC subroutine
+  jsr __RAMD_PUTC
+  ;-----------------------
+RAMD_PUTC_REST subroutine
+  inc __RAMD_WRITE_ADR
+  bne .exit
+
+  lda __RAMD_WRITE_ADR +1
+  jsr RAMD_INC_PTR
+  sta __RAMD_WRITE_ADR +1
+  bcc .exit
+
+  inc __RAMD_WRITE_BANK
+.exit
+  rts
+
+
+  ;-----------------------
+RAMD_GETC subroutine
+  jsr __RAMD_GETC
+  ;-----------------------
+RAMD_GETC_REST subroutine
+  inc __RAMD_READ_ADR
+  bne .exit
+
+  pha
+  lda __RAMD_READ_ADR +1
+  jsr RAMD_INC_PTR
+  sta __RAMD_READ_ADR +1
+  bcc .exit2
+  inc __RAMD_READ_BANK
+.exit2
+  pla
+.exit
+  rts
+
+
+
+  ;-----------------------
+RAMD_INC_PTR subroutine
+  sec
+  adc #0
+  cmp #$80
+  bne .02
+
+  lda #$A0
+  clc
+  bne .exit
+
+.02
+  cmp #$C0
+  bcc .exit
+  lda #>FLLO_STARTADR
+.exit
+  rts
+
+
+
+;-------- SUPER RAM PROCEDURE TO WRITE A BYTE
+__RAMDISK
+  RORG BIP
+
+__RAMD_PUTC subroutine
+  pha
+
+__RAMD_WRITE_BANK = . +1
+  lda #2 + FEMOD_RAM2                   ;BANK + SUPER RAM MODUS
+  sta IO_FINAL
+
+  pla
+__RAMD_WRITE_ADR = . +1
+  sta FLLO_STARTADR
+
+__RAMD_WRITE_MODE = . +1
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  rts
+
+
+;-------- SUPER RAM PROCEDURE TO READ A BYTE
+
+__RAMD_GETC subroutine
+__RAMD_READ_BANK = . +1
+  lda #2 + FEMOD_RAM2                   ;BANK + SUPER RAM MODUS
+  sta IO_FINAL
+
+__RAMD_READ_ADR = . +1
+  lda FLLO_STARTADR
+  pha
+
+__RAMD_READ_MODE = . +1
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  pla
+  rts
+
+  REND
+__RAMDISK_E
 
 
 
@@ -2244,14 +3406,23 @@ MSG_DOS
 ; SET MEMORY CONFIG
 ; ==============================================================
 
-MOVE_WEDGE_LOW
-  ldx #<MY_WEDGE_LO                     ; store the new dest address lo-byte
+MOVE_WEDGE_LOW subroutine
+  lda #<MY_WEDGE_LO                     ; store the new dest address lo-byte
   ldy #>MY_WEDGE_LO                     ; store the new dest address hi-byte $516
 
 
-MOVE_WEDGE
-  sty mwcmd + 1                        ; store the new dest address hi-byte $516
-  stx mwcmd                            ; store the new dest address lo-byte
+;MOVE_WEDGE
+  ;sty mwcmd + 1                        ; store the new dest address hi-byte $516
+  ;stx mwcmd                            ; store the new dest address lo-byte
+  ;txa
+
+  clc
+  adc #<(MY_WEDGE_END - MY_WEDGE_START)
+  sta $58                               ; low-byte new end address +1 $0501+fl len
+
+  tya
+  adc #>(MY_WEDGE_END - MY_WEDGE_START)
+  sta $59                               ; high-byte new end address +1 $0501+fl len
 
   lda #<MY_WEDGE_START
   sta $5f                               ; low-byte start address $a000
@@ -2263,26 +3434,20 @@ MOVE_WEDGE
   lda #>MY_WEDGE_END
   sta $5b                               ; high-byte end address +1 $a???
 
-  lda #<(MY_WEDGE_END - MY_WEDGE_START)
-  clc
-  adc mwcmd                             ; add the new dest address $0500
-  ;adc $74                               ; add the new dest address $0500
-  sta $58                               ; low-byte new end address +1 $0501+fl len
-  lda #>(MY_WEDGE_END - MY_WEDGE_START)
-  adc mwcmd + 1                         ; add the new dest address $0500
-  ;adc $75                               ; add the new dest address $0500
-  sta $59                               ; high-byte new end address +1 $0501+fl len
+;  sei
+  jsr SY_MOVEMEM                        ; execute move memory vic routine and return
+;  cli
+  jmp MY_WEDGE_LO
 
-  sei
-  jsr MOVMEM                            ; execute move memory vic routine and return
-  jsr MOWE_1
-  cli
-  rts
+;  jsr .01
+;  cli
+;  rts
 
-MOWE_1
-  jmp (mwcmd)
+;.01
+;  jmp (mwcmd)
 
 
+MOVE_CODE
 
 
 
@@ -2300,7 +3465,13 @@ MOWE_1
 ;  lda #$91                    ;24kb         %1001 0001
 ;  lda #$90                    ;24+3kb       %1001 0000
 ;  lda #$80                    ;ALL RAM      %1000 0000
-SetVicMemConfig:
+
+SET_MEM_CONFIG SUBROUTINE
+;  jsr CLROUT                            ;CLEAR SCREEN
+  lda BIP_IOBASE
+  sta IO_FINAL
+
+SetVicMemConfig  subroutine
   tax
   and #$03
   cmp #$02
@@ -2356,42 +3527,11 @@ dir_unexpand:       ;@@@
 
 
 
-; ==============================================================
-; The credits!
-; ==============================================================
-
-THECREDITS
-  dc.b CLRHOME, YELLOW, "V3 06/2009", CR, CR
-  dc.b RED, "CREATED BY:", CR, CR
-  dc.b BLACK
-  dc.b "LEIF BLOOMQUIST", CR
-  dc.b "ANDERS PERSSON", CR
-  dc.b "ANDERS CARLSSON", CR
-  dc.b "CHRISTOPHER PREST", CR
-  dc.b "BRIAN LYONS", CR
-  dc.b "LEE DAVIDSON", CR
-  dc.b "SCHLOWSKI", CR
-  dc.b "VIPERSAN", CR
-  dc.b "DANIEL KAHLIN", CR
-  dc.b "JEFF DANIELS", CR
-  dc.b "MICHAEL KLEIN", CR
-  dc.b "DAVID A. HOOK", CR
-  dc.b "TOMMY WINKLER", CR, CR
-  dc.b PURPLE
-  dc.b "WWW.SLEEPINGELEPHANT", CR
-  dc.b "        .COM/DENIAL/", CR
-  dc.b BLUE
-  dc.b $00
-
-
-
-
-
 
 
 ;Pad to end to create valid cart image
-  org $afff
-  dc.b #$00
+;  org $afff
+;  dc.b #$00
 
 
   ;jmp MY_WDGE_START
@@ -2411,7 +3551,7 @@ SY_TIMOUTFLG = $ffa2
 SY_GETSTATUS = $ffb7
 
 
-MY_RELOCATOR
+MY_RELOCATOR subroutine
 _relo = . +2
   jsr SY_GETSTATUS                      ;WEDGE ADDRESS TO STACK
 _relo0000 = . +1
@@ -2636,7 +3776,7 @@ BASLOAD_END
 BASLOAD_END_2
   stx BASVAR
   sty BASVAR +1
-  jsr PGMLINK
+  jsr SY_PGMLINK
 DOLO_E
   clc                                   ; LOAD OK
   rts
@@ -2744,7 +3884,7 @@ MYLO_1
 
 _relo0022 = . +1
   jsr BASLOAD_END_2
-  jsr BASCLR2
+  jsr SY_BASCLR2
 _relo0023 = . +1
   jmp INPUT_LOOP
 
@@ -2875,14 +4015,14 @@ _relo5013 = . +1
   ldy #>MSG_PRINTIO
 _relo0036 = . +1
   jsr STROUT
-  ldx DL_IOBASE
+  ldx BIP_IOBASE
   lda #0
 _relo0037 = . +1
   jsr HEXOUT
   lda #"/"
 _relo0040 = . +1
   jsr CHROUT
-  ldx DL_IOBASE +1
+  ldx BIP_IOBASE +1
   lda #0
 _relo0038 = . +1
   jsr HEXOUT
@@ -2934,7 +4074,7 @@ DO_UNNEW
   ldy #$01
   tya
   sta (BASSTRT),Y                       ; store a non zero in the MSB of the first link addr
-  jsr PGMLINK                           ; relinker
+  jsr SY_PGMLINK                        ; relinker
   lda PT1                               ; set end of basic/start of variables to the address of the last '0' found + 2
   clc
   adc #$02
@@ -2942,7 +4082,7 @@ DO_UNNEW
   lda PT1 +1
   adc #$00
   sta BASVAR +1
-  jsr BASCLR2                           ; Reset TXTPTR and Perform [clr]
+  jsr SY_BASCLR2                        ; Reset TXTPTR and Perform [clr]
   ;lda #<UnNewMessage    ; string start point lo-byte
   ;ldy #>UnNewMessage    ; string start point hi-byte
   ;jsr PRNSTR            ; print string in A/Y, 0 terminated
@@ -3814,29 +4954,24 @@ PRCA_SPCOL
 
 
 
-
-
-
-
-
 ; ==============================================================
 ; DISPLAY STRING    in AC/YR
 ; ==============================================================
 
-STROUT
+STROUT subroutine
   sta PT1
   sty PT1 +1
   ldy #0
-  ;sty 658                         ;Scroll Flag
+  ;sty 658                              ;Scroll Flag
   ;dey
-STOU_1
+.1
   lda (PT1),y
-  beq STOU_E
+  beq .E
 _relo0140 = . +1
   jsr CHROUT
   iny
-  bne STOU_1
-STOU_E
+  bne .1
+.E
   rts
 
 
@@ -3856,7 +4991,7 @@ STR_AT
 _relo0143 = . +1
   jsr SET_CURSOR
   ldy #2
-  bne STOU_1
+  bne .1
 
 
 ; ==============================================================
@@ -3864,6 +4999,7 @@ _relo0143 = . +1
 ; ==============================================================
 
 DEL_LINE
+  ldy #0
 _relo0144 = . +1
   jsr SET_CURSOR
   ldy #21
@@ -3889,6 +5025,7 @@ SET_CURSOR
 ; ==============================================================
 
 
+  ;PRINT 2 BLANK
 SPCOUT2
 _relo0141 = . +1
   jsr SPCOUT
@@ -3896,10 +5033,17 @@ SPCOUT
   lda #32
   bne CHROUT
 
+  ;CLEAR SCREEN
+CLROUT
+  lda #CLRHOME
+  bne CHROUT
+
+  ;PRINT CR
 CROUT
   lda #13
   bne CHROUT
 
+  ;PRINT 2 CHR IN AC/XR
 CHROUT2
 _relo0142 = . +1
   jsr CHROUT
@@ -4212,32 +5356,35 @@ _relo0189 = . +1
 
 
 ;------------ PRINT HEX VALUE IN  X/A
-HEXOUT
+HEXOUT subroutine
   pha
   lda #"$"
   jsr BSOUT
   pla
-  beq HEX0
+  beq .0
+
+HEXOUT4
 _relo0200 = . +1
-  jsr HEX2
-HEX0
+  jsr .2
+.0
   txa
-HEX2
+HEXOUT2  
+.2
   pha
   lsr
   lsr
   lsr
   lsr
 _relo0201 = . +1
-  jsr HEX1
+  jsr .1
   pla
   and #15
-HEX1
+.1
   clc
   adc #246
-  bcc HEX1_2
+  bcc .12
   adc #6
-HEX1_2
+.12
   adc #58
   jmp BSOUT
 
@@ -4414,14 +5561,15 @@ _relo0251 = . +1
   jmp BIP
 
 ;-------- COPY PROCEDURE TO BIP AND EXECUTE
-COPY_PROC
+COPY_PROC subroutine
   sta PT1 +1
   stx PT1
-COPR_2
+  dey
+.2
   lda (PT1),y
   sta BIP,y
   dey
-  bpl COPR_2
+  bpl .2
   rts
 
 
@@ -4916,8 +6064,6 @@ TOKEN_TAB
 ; ==============================================================
 
 
-MSG_LOADERR
-  dc.b "LOAD ERROR",13,0
 MSG_LOADAT
   dc.b " FROM ",0
 MSG_LOADTO
@@ -4944,6 +6090,568 @@ WEDGEMESSAGE1c
 
 
 MY_WEDGE_END
+
+
+
+; ==============================================================
+; FIRMWARE FLASHER / 29F040 CODE
+; ==============================================================
+
+FLASH_FW_DEST = 4700
+
+FLASH_FW_LEN = (FLASH_FW_END - FLASH_FW_START)
+
+
+MOVE_FLASH_FW subroutine
+  lda #<(FLASH_FW_DEST + FLASH_FW_LEN)
+  sta $58                               ; low-byte new end address +1 $0501+fl len
+  lda #>(FLASH_FW_DEST + FLASH_FW_LEN)
+  sta $59                               ; high-byte new end address +1 $0501+fl len
+
+  lda #<FLASH_FW_START
+  sta $5f                               ; low-byte start address $a000
+  lda #>FLASH_FW_START
+  sta $60                               ; high-byte start address $a000
+
+  lda #<FLASH_FW_END
+  sta $5a                               ; low-byte end address +1 $a???
+  lda #>FLASH_FW_END
+  sta $5b                               ; high-byte end address +1 $a???
+
+  jmp SY_MOVEMEM                        ; execute move memory vic routine and return
+
+
+;FLASH_FW subroutine
+;  jsr MOVE_FLASH_FW
+;  jmp FLASHER
+
+
+; ==============================================================
+; FLASH CODE / 29F040 CODE
+; ==============================================================
+
+FLASH_FW_START
+  RORG FLASH_FW_DEST
+
+FLASHER subroutine
+  sta LOADSTART
+  sty LOADSTART +1
+
+  ;sta $a000                             ; UNLOCK IO
+  lda #FEMOD_ROM_P                      ; PROG MODE
+  sta IO_FINAL
+
+  jsr TestEE
+  bcs .rts
+
+  jsr BLANK_CHECK
+  beq .05
+
+  jsr FLASH_ERASE
+  bcs .err                              ; ERROR -->
+
+  jsr BLANK_CHECK
+  beq .05
+
+.err
+  lda #<MSG_ERROR
+  ldy #>MSG_ERROR
+  jsr SY_STROUT
+  sec
+  bcs .exit
+
+.05
+  jsr FLASH_FIRMWARE
+
+.exit
+  php
+  jsr FlashCodeEndSequ                  ; RESET
+
+  lda #FEMOD_ROM                        ; EEP MODE
+  sta IO_FINAL
+  plp
+  bcs .errexit
+  jmp SOFT_RESET
+
+.errexit
+  jmp BASIC_WARM
+
+.rts
+  rts
+
+
+; ==============================================================
+; 29F040 SUBS
+; ==============================================================
+
+_flashBase    = $2000
+_flash555     = _flashBase + $555
+_flash2aa     = _flashBase + $2aa
+
+FLASH_ALG_ERROR_BIT    = $20
+FLASH_ALG_RUNNING_BIT  = $08
+
+
+_flashCodeMagic subroutine
+  lda #$aa
+  sta _flash555
+  lda #$55
+  sta _flash2aa
+  rts
+
+FlashCodeEndSequ subroutine             ; RESET
+_flashCodeEndSequ
+  lda #$f0
+  sta _flashBase
+  rts
+
+_flashCodeSectorErase subroutine
+  jsr _flashCodeMagic
+  lda #$80
+  sta _flash555
+  jsr _flashCodeMagic
+  lda #$30
+  sta _flashBase
+  rts
+
+_flashCodeChipErase subroutine
+  jsr _flashCodeMagic
+  lda #$80
+  sta _flash555
+  jsr _flashCodeMagic
+  lda #$10
+  sta _flash555
+  rts
+
+;_flashCodeWrite subroutine
+;  jsr _flashCodeWritePrep
+;  sta (SAVESTART),y
+;  rts
+
+
+_flashCodeWritePrep subroutine
+  pha
+  jsr _flashCodeMagic
+  lda #$A0
+  sta _flash555
+  pla
+  rts
+
+
+_flashCodeCheckProgress subroutine      ; TOGGLE CHECK
+  pha
+  txa
+  pha
+_flashCodeCP0
+  ldx #2
+_flashCodeCP1
+  lda _flashBase
+  cmp _flashBase
+  beq _flashCodeCP2
+
+  and #FLASH_ALG_ERROR_BIT
+  beq _flashCodeCP0
+
+  ; ERROR!!
+  lda _flashBase
+  cmp _flashBase
+  beq _flashCodeCP4
+
+  jsr FlashCodeEndSequ                  ; RESET
+  sec
+  bcs _flashCodeCPE                     ; ERROR!
+
+_flashCodeCP2
+  dex
+  bne _flashCodeCP1
+_flashCodeCP4
+  clc
+_flashCodeCPE
+  pla
+  tax
+  pla
+  rts
+
+
+;=============== GET VENDOR/DEVICE ID in X,Y
+FlashCodeVendorID subroutine
+  jsr _flashCodeMagic
+  lda #$90
+  sta _flash555
+  ldx _flashBase
+  ldy _flashBase+1
+  jmp _flashCodeEndSequ
+
+;=============== ERASE SECTOR
+FlashCodeSectorErase subroutine
+  jsr _flashCodeSectorErase
+  jmp _flashCodeCheckProgress
+
+;=============== FLASH BYTE    AC ==> (SAVESTART)
+FlashCodeWrite subroutine
+  jsr _flashCodeWritePrep
+  sta (SAVESTART),y
+  jmp _flashCodeCheckProgress
+
+;=============== SET BANK AND FLASH BYTE    AC ==> (SAVESTART)  C=1:error
+FlashCodeWriteXP subroutine
+  pha
+__flash_BANK = . +1
+  lda #FEMOD_ROM_P
+  sta IO_FINAL
+  pla
+  jsr FlashCodeWrite
+  bcs .exit
+  cmp (SAVESTART),y
+  beq .clc
+  sec
+  bcs .exit
+.clc
+  clc
+.exit
+  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  sta IO_FINAL
+  rts
+
+
+  ;-----------------------
+FlashCodeWriteXpInc subroutine
+  inc SAVESTART
+  bne .exit
+
+  lda SAVESTART +1
+  jsr RAMD_INC_PTR
+  sta SAVESTART +1
+  bcc .exit
+
+  inc __flash_BANK
+.exit
+  rts
+
+
+
+;------------
+MSG_VENDOR
+  dc.b RVSON,13,"VENDOR:",RVSOFF,0
+MSG_DEVICEID
+  dc.b RVSON,"01  DEVICE:",RVSOFF,0
+MSG_A4
+  dc.b "A4",13,0
+
+MSG_EEE
+  dc.b "??",13,"BAD EEPROM",0
+
+
+
+
+
+
+; ==============================================================
+; OPEN FIRMWARE FILE AND FLASH
+; ==============================================================
+
+MSG_ERRFLSH
+  dc.b "FLASH "
+MSG_ERROR
+  dc.b "ERROR",13,0
+
+MSG_FLASH
+  dc.b "FLASHING ...",13,0
+MSG_ERASE
+  dc.b "ERASING ...",13,0
+MSG_BLANK
+  dc.b "BLANK CHECK ...",13,0
+
+
+
+
+; ==============================================================
+; TEST FOR RIGHT EEPROM TYPE
+; ==============================================================
+
+TestEE subroutine
+  lda #<MSG_VENDOR
+  ldy #>MSG_VENDOR
+  jsr SY_STROUT
+
+  jsr FlashCodeVendorID
+  tya
+  pha
+;     ldx #$01
+  cpx #$01                              ; AMD
+  bne .ERR0
+
+  lda #<MSG_DEVICEID
+  ldy #>MSG_DEVICEID
+  jsr SY_STROUT
+  pla
+  tax
+;     ldx #$a4
+  cpx #$a4                                                    ; 29F040
+  bne .ERR1
+  lda #<MSG_A4
+  ldy #>MSG_A4
+  jsr SY_STROUT
+
+  clc
+  rts
+
+.ERR0
+  pla
+.ERR1
+  lda #<MSG_EEE
+  ldy #>MSG_EEE
+  jsr SY_STROUT
+  sec
+  rts
+
+
+
+
+
+
+; ==============================================================
+; OPEN FIRMWARE FILE AND FLASH
+; ==============================================================
+
+
+FLASH_FIRMWARE subroutine
+  lda #<MSG_FLASH
+  ldy #>MSG_FLASH
+  jsr SY_STROUT
+
+  jsr SET_LOADPTR
+  jsr SET_SAVEPTR
+  jsr FLASH_FIRMWARE_2
+  bcs .rts
+  jsr SET_SAVEPTR_2
+  ;ldy #0
+FLASH_FIRMWARE_2
+.02
+  lda #FEMOD_RAM                        ; RAM MODE
+  sta IO_FINAL
+  lda (LOADPTR),y
+
+  pha
+  lda #FEMOD_ROM_P                      ; PROG MODE
+  sta IO_FINAL
+  pla
+
+  jsr FlashCodeWrite
+  bcs .err2
+
+  cmp (SAVESTART),y
+  bne .err2
+
+  iny
+  bne .02
+  inc SAVESTART +1
+  inc LOADPTR +1
+  dex
+  bne .02
+  clc
+.rts
+  rts
+
+
+;.err
+;  pla
+;  pla
+.err2
+  lda #<MSG_ERRFLSH
+  ldy #>MSG_ERRFLSH
+  jsr SY_STROUT
+  sec
+  rts
+
+
+
+FLASH_ERASE
+  lda #<MSG_ERASE
+  ldy #>MSG_ERASE
+  jsr SY_STROUT
+  jsr FlashCodeSectorErase
+  bcs .err2
+  rts
+
+
+
+BLANK_CHECK subroutine
+  lda #<MSG_BLANK
+  ldy #>MSG_BLANK
+  jsr SY_STROUT
+
+  jsr SET_SAVEPTR
+  jsr BLANK_CHECK_2
+  bne .exit
+
+  jsr SET_SAVEPTR_2
+BLANK_CHECK_2
+  lda #$ff
+.02
+  cmp (SAVESTART),y
+  bne .exit
+  iny
+  bne .02
+  inc SAVESTART +1
+  dex
+  bne .02
+.exit
+  rts
+
+
+
+SET_LOADPTR subroutine
+  lda LOADSTART
+  sta LOADPTR
+  lda LOADSTART +1
+  sta LOADPTR +1
+  rts
+
+SET_SAVEPTR subroutine
+  lda #$70                                ;DEFAULT CARTRIDGE ADDRESS
+  sta SAVESTART +1
+  lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
+  sta SAVESTART
+  ldx #16                                 ;BLOCK COUNT
+  ldy #0
+  rts
+
+
+SET_SAVEPTR_2 subroutine
+  lda #$A0                                ;DEFAULT CARTRIDGE ADDRESS
+  sta SAVESTART +1
+  lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
+  sta SAVESTART
+  ldx #32                                 ;BLOCK COUNT
+  ldy #0
+  rts
+
+
+
+
+  REND
+FLASH_FW_END
+
+
+
+
+
+
+; ==============================================================
+; STACK PARAM PROCS
+; ==============================================================
+
+  ; PRINT STRING PARAMETER AT RETURN ADDRESS
+SPAR_PRINTSTRING
+  jsr SPAR_GETPTR
+SPAR_PRINTSTRING_2
+  jsr STRGET_2
+  jmp STROUT
+
+
+  ; PRINT STRING PARAMETER AT RETURN ADDRESS
+SPAR_PRINTSTRING_AT
+  jsr SPAR_GETPTR
+SPAR_PRAT
+  ldy #2
+  jsr STRGET_2
+  jmp STR_AT
+
+
+  ; PRINT MESSAGE, WAIT KEY
+SPAR_MSGBOX
+  jsr SPAR_GETPTR
+  jsr SPAR_PRAT
+  jsr WAIT_KEY
+SPAR_MSGCLR
+  ldy #0
+  lda (PTR_FNAM),y
+  tax
+  jmp DEL_LINE
+
+
+  ; GET STRING
+SPAR_GETSTRING subroutine
+  jsr SPAR_GETPTR
+  jmp STRGET_2
+
+
+  ; GET POINTER TO PARAMETER AT RETURN ADDRESS
+SPAR_GETPTR subroutine
+  tsx
+  lda STACK +3,x
+  clc
+  adc #1
+  sta PTR_FNAM
+  lda STACK +4,x
+  adc #0
+  sta PTR_FNAM+1
+  ldy #0
+  rts
+
+
+  ; ADD OFFSET +1 TO RETURN ADDRESS
+STRGET
+  ldy #0
+STRGET_2
+  jsr STRLEN_2
+  iny
+MEMGET
+  tya
+MEMGET_2
+  ;dex
+  ;dex
+  jsr SPAR_ADD
+  lda PTR_FNAM
+  ldy PTR_FNAM +1
+  rts
+
+
+  ; ADD OFFSET +1 TO RETURN ADDRESS
+SPAR_ADD
+  clc
+  adc STACK +3,x
+  sta STACK +3,x
+  bcc SPAD_0
+  inc STACK +4,x
+SPAD_0
+  rts
+
+  ; GET STRING LEN IN YR
+STRLEN
+  ldy #0
+STRLEN_2
+STLE_0
+  lda (PTR_FNAM),y
+  beq STLE_E
+  iny
+  bne STLE_0
+STLE_E
+  sty LEN_FNAM
+  rts
+
+
+  ; PRINT STRING IN PTR_FNAM
+STRNOUT
+  ldy #0
+  ldx LEN_FNAM
+STNO_0
+  lda (PTR_FNAM),y
+  beq STNO_E
+  jsr CHROUT
+  iny
+  dex
+  bne STNO_0
+STNO_E
+  rts
+
+
+
+
+
+
+
 
 
 
