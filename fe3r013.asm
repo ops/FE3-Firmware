@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 012
+; VIC 20 Final Expansion Cartridge - Revision 013
 ; Thomas Winkler - May 3, 2009
 
 ; Thanks to Leif Bloomquist
@@ -9,13 +9,12 @@
 
 
 
+CAS_BUF     = $033c                     ;CASSETTE BUFFER
+F_IO        = CAS_BUF +0                ;IO FLAG
+F_WE        = CAS_BUF +1                ;WEDGE FLAG
+F_CURDEV    = CAS_BUF +2                ;WEDGE FLAG
 
-MY_WEDGE_LO = $0400                     ;WEDGE LOW ADDRESS
-
-
-F_IO     = 1000                         ;IO FLAG
-F_WE     = 1001                         ;WEDGE FLAG
-F_CURDEV = 1002                         ;WEDGE FLAG
+MY_WEDGE_LO = CAS_BUF +4                ;WEDGE LOW ADDRESS
 
 
 
@@ -936,7 +935,7 @@ HELPSCREEN3
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R012", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R013", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
   dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
@@ -2046,8 +2045,15 @@ MOVE_WEDGE
   ;adc $75                               ; add the new dest address $0500
   sta $59                               ; high-byte new end address +1 $0501+fl len
 
+  sei
   jsr MOVMEM                            ; execute move memory vic routine and return
+  jsr MOWE_1
+  cli
+  rts
+
+MOWE_1
   jmp (mwcmd)
+
 
 
 
@@ -3073,7 +3079,7 @@ _relo0404 = . +1
   ldy #0
 MYSA_00
   jsr $fd11                             ;END ADDRESS?
-  bcs MYLO_E0                           ;YES -->
+  bcs MYSA_E0                           ;YES -->
   lda (LOADSTART),y
 _relo0405 = . +1
   jsr IECOUT
@@ -3092,7 +3098,7 @@ MYSA_02
   jsr $fd1b                             ;INCR ADDR
   bne MYSA_00
 
-MYLO_E0
+MYSA_E0
 _relo0408 = . +1
   jsr UNLISTEN
 _relo0409 = . +1
@@ -4573,7 +4579,7 @@ WEDGEMESSAGE1c
 ; RELOCATOR TABLE
 ; ==============================================================
 
-  org $be00
+;  org $be00
 
 
 RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
