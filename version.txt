@@ -1,10 +1,25 @@
-FE3Firmware Revisions:
+FE3Firmware Revisions (compile with: dasm.exe fe3r017.asm -ofe3firmware.prg -llist.txt):
+
+
+
+R017b (bugfix):
+
++ Flash bug - Bank 0 as package buffer
+
++ return from diskloader to main menu after diskcommands or failed loads
+
++ change to root of SD bevore firmware flashing
+
++ internal firmware flasher now uses filename "FE3FIRMWARE.PRG" for compatibility with DirMaster
+
++ erasing flash bank 2 to 14 if isn't empty
+
 
 
 
 R017:
 
-+ Cart Loader (f5) 
++ Cart Loader (f5)
 
 
 

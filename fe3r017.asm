@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 017
+; VIC 20 Final Expansion Cartridge - Revision 017b
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -242,7 +242,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R017", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R017B", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -432,9 +432,6 @@ JMP_TABLE
   jmp HELP2                             ; sys 41000: Help sreen
   jmp MY_WEDGE_INIT                     ; sys 41003: Init Wedge
   jmp MOVE_WEDGE_LOW                    ; sys 41006: Copy Wedge to low mem
-  jmp CART_LOADER
-
-
 
   ; COPY FIRMWARE FROM EEPROM TO SRAM
 COPYROM subroutine
@@ -563,9 +560,7 @@ SETUPTIMEOUT
   cmp #$86  ;F3
   bne .F4
 
-  jsr DLOADER
-  clc
-  bcc SSCREEN
+  jmp DLOADER
 
 .F4
   cmp #$8a  ;F4
@@ -1233,13 +1228,13 @@ F3_UT1
 
 
 ;-------------- PRINT DLOADER SCREEN
-DLOA_00
+DLOA_00 subroutine
   jsr MENU_SEL
-  bcc DLOA_01
+  bcc .01
   jsr MESE_EXEC
-DLOA_01
+.01
 
-DLOADER
+DLOADER subroutine
   jsr INIT_CART                         ; Screen Colors
   jsr SPAR_PRINTSTRING
   dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- dISK lOADER  ----",CR,CR,0
@@ -1247,7 +1242,7 @@ DLOADER
   jsr DLOADER1
   cpx #13                                 ;CR
   beq DLOA_00
-  rts
+  jmp SSCREEN
 
 
 DLOADER1 subroutine
@@ -1644,7 +1639,7 @@ MENU_SEL subroutine
   jsr INIT_CATALOG                      ;INITIALIZE CATALOG BUFFER
   jsr SET_LDBUF                         ;
 
-.2
+.nextline
   jsr NEXTLINE
   beq .E
   ldy #4
@@ -1655,7 +1650,7 @@ MENU_SEL subroutine
   beq .E
 
   cmp #$aa                              ;"+" - LOADER ANWEISUNG
-  bne .2
+  bne .nextline
 
   tya
   sec
@@ -1665,20 +1660,21 @@ MENU_SEL subroutine
   adc #0
   sta CHRPTR +1
 
-.2a
+.do_cmd
   jsr CHRGOT
   bne .2b
 .2c
   tax
-  beq .2
+  beq .nextline
 
   jsr CHRGET                            ;SKIP ":"
   beq .2c
 .2b
-  jsr .50
-  jmp .2a
+  jsr .do_line
+  jmp .do_cmd
 
-.50
+  ;INTERPRET COMMAND
+.do_line
   cmp #34                               ;+"FILENAME"
   bne .6
   jmp SEL_LOAD
@@ -1740,36 +1736,23 @@ BIP_RUNADR  = BIP_CMD +3                ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=in
 
 
   ;EXECUTE DLOADER BUFFER
-MESE_EXEC
+MESE_EXEC subroutine
   lda DL_CNTLDR
-  beq LOCO_RELOAD
-
-  ;LOADER CODE
-  ;  lda #<DLOADSCREEN
-  ;  ldy #>DLOADSCREEN
-  ;  jsr STROUT
-  jsr CLROUT
-
+  beq .RELOAD
   ldx BIP_CMD
-  beq LOCO_RELOAD
+  beq .RELOAD
   cpx #TOK_RELO                         ;RELOAD
-  beq LOCO_RELOAD
+  beq .RELOAD
 
+  jsr CLROUT
   jsr SET_MEM_CONFIG
-  ;jsr SetVicMemConfig
-
-  ;jsr INIT_BASIC                        ; original color
-  ;jsr SY_RAMTAS2                        ; calculate RAM size
-  ;jsr SY_BASRAM                         ; BASIC RAM (e3a4)
-
   jsr SY_INITMSG                        ; INIT Message (e404)
   jsr CROUT
-
 
   lda #FEMOD_ROM
   sta IO_FINAL                          ; EEPROM!
   jsr LOADER                            ; LOAD FILES
-  bcs LOCO_RELOAD
+  bcs .err
 
 EXEC_PACKAGE
   ldx BIP_CMD
@@ -1779,30 +1762,29 @@ EXEC_PACKAGE
   beq LOCO_RUN
   cpx #TOK_SYS                          ;SYS
   beq LOCO_SYS
-
-LOCO_RELOAD
+.err
   jmp DLOADER
 
-LORE_E
+.RELOAD
   rts
 
 
 ;------------
-SEL_SYS
+SEL_SYS subroutine
   jsr GETADR
-  bcs SERU_5
+  bcs .5
 INV_ADDR
   lda #0
   tax
   sta BIP_CMD
-SERU_5
+.5
   stx BIP_RUNADR
   sta BIP_RUNADR +1
   rts
 
 
 ;------------
-SEL_NOIO
+SEL_NOIO subroutine
   lda #$80                              ;RAM, NO-IO
   ora DL_IOBASE +1
   sta DL_IOBASE +1
@@ -1812,20 +1794,20 @@ SEL_NOIO
 
 
 ;------------ BLOCK WRITE PROTECT
-SEL_BLOCK1
+SEL_BLOCK1 subroutine
   ldy #0
-  beq SEL_BLOCK2a
+  beq .2a
 
 
 ;------------ BLOCK DISABLE
 SEL_BLOCK2
   ldy #1
-SEL_BLOCK2a
+.2a
   jmp SEL_BLOCK_P
 
 
 ;------------
-LOCO_RES
+LOCO_RES subroutine
   lda #<MSG_RES
   ldy #>MSG_RES
   jsr STROUT
@@ -1835,14 +1817,14 @@ LOCO_RES
   jmp RESET_SYSTEM
 
 ;------------
-LOCO_RUN
+LOCO_RUN subroutine
   lda #<MSG_RUN
   ldy #>MSG_RUN
   jsr STROUT
   jmp RUNBASIC
 
 ;------------
-LOCO_SYS
+LOCO_SYS subroutine
   lda #<MSG_SYS
   ldy #>MSG_SYS
   jsr STROUT
@@ -1865,22 +1847,22 @@ LOCO_SYS
 
 
 
-NEXTLINE
+NEXTLINE subroutine
   ldy #1
   lda (PT2),y
-  beq NELI_E
+  beq .E
   tax
   dey
   lda (PT2),y
   sta PT2
   stx PT2 +1
   txa                                   ;RESET Z
-NELI_E
+.E
   rts
 
 
 ;----PRINT MARKER
-LIST_MARKER
+LIST_MARKER subroutine
   lda DL_LINCNT
   bne LIMA_1
   rts
@@ -1897,7 +1879,7 @@ LIMA_1
   ldy #$15
   jmp PUTCHR3
 
-HIDE_MARKER
+HIDE_MARKER subroutine
   ldx DL_SEL
   ldy #0
   jsr SET_CURSOR
@@ -1913,7 +1895,7 @@ HIDE_MARKER
 
 
 ;----LIST PAGE
-LIST_PAGE
+LIST_PAGE subroutine
   lda #0
   sta DL_LINCNT
   lda #DL_STARTLINE
@@ -2390,6 +2372,12 @@ FIRMW_FLASHER subroutine
   jsr SY_INITMSG                        ; INIT Message (e404)
   jsr CROUT
 
+  ;CHANGE TO ROOT
+  jsr SPAR_DISKCMD
+  dc.b "CD_",0                          ;EXIT D64
+  jsr SPAR_DISKCMD
+  dc.b "CD//",0                         ;--> ROOT
+
   ;SET FILENAME PARAM
   jsr SPAR_GETSTRING
   dc.b 11,"FE3FIRMWARE",0
@@ -2397,11 +2385,17 @@ FIRMW_FLASHER subroutine
   sty PT2 +1
 
   ;SET FILE PARAM
-  lda #2                                ; SA! - CARTRIDGE
-  jsr LOAD_AT
-  bcs .err
-  
+  jsr LOAD_CART_AT
+  bcc .ok
 
+  jsr SPAR_GETSTRING
+  dc.b 15,"FE3FIRMWARE.PRG",0
+  sta PT2
+  sty PT2 +1
+  jsr LOAD_CART_AT
+  bcs .err
+
+.ok
   ;FLASH FIRMWARE
   jsr MOVE_FLASH_FW
   lda #<FLLO_STARTADR
@@ -2411,8 +2405,6 @@ FIRMW_FLASHER subroutine
 .err
   jsr WAIT_KEY
   jmp UTIL_MENU
-
-
 
 
 
@@ -2631,8 +2623,8 @@ FLSH_LOADER subroutine
 
   jsr SET_PT2_LDBUF
 .00
-  lda #2                                ; SA=2: CARTRIDGE - WHOLE FILE
-  jsr LOAD_AT
+;  lda #2                                ; SA=2: CARTRIDGE - WHOLE FILE
+  jsr LOAD_CART_AT
   bcs .err
 
   ;CALC FILE LENGTH
@@ -2676,8 +2668,8 @@ FLSH_LOADER subroutine
 .06
   dec LOADEND
 
-  lda (LOADPTR),y
-  jsr RAMD_PUTC
+  lda (LOADPTR),y                       ;BYTE FROM FILE
+  jsr RAMD_PUTC                         ;INTO RAMDISK
 
   iny
   bne .07
@@ -2723,6 +2715,8 @@ SET_LPT_AY
 
 
   ;LOAD FILE INTO BUFFER
+LOAD_CART_AT subroutine
+  lda #2                                ; SA! - CARTRIDGE
 LOAD_AT subroutine
   tay                                   ; SA
   ldx F_CURDEV                          ; device#
@@ -3340,15 +3334,18 @@ RAMD_INC_PTR subroutine
   sec
   adc #0
   cmp #$80
-  bne .02
+  bcc .exit
+
+  cmp #$A0
+  bcs .01
 
   lda #$A0
-  clc
   bne .exit
 
-.02
+.01
   cmp #$C0
   bcc .exit
+.02
   lda #>FLLO_STARTADR
 .exit
   rts
@@ -3363,7 +3360,7 @@ __RAMD_PUTC subroutine
   pha
 
 __RAMD_WRITE_BANK = . +1
-  lda #2 + FEMOD_RAM2                   ;BANK + SUPER RAM MODUS
+  lda #FEMOD_RAM2 + 0                   ;SUPER RAM MODUS, BANK 0
   sta IO_FINAL
 
   pla
@@ -3372,6 +3369,7 @@ __RAMD_WRITE_ADR = . +1
 
 __RAMD_WRITE_MODE = . +1
   lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+; lda #FEMOD_ROM                        ;ROM MODUS
   sta IO_FINAL
   rts
 
@@ -3380,7 +3378,7 @@ __RAMD_WRITE_MODE = . +1
 
 __RAMD_GETC subroutine
 __RAMD_READ_BANK = . +1
-  lda #2 + FEMOD_RAM2                   ;BANK + SUPER RAM MODUS
+  lda #FEMOD_RAM2 + 0                   ;SUPER RAM MODUS, BANK 0
   sta IO_FINAL
 
 __RAMD_READ_ADR = . +1
@@ -3388,7 +3386,8 @@ __RAMD_READ_ADR = . +1
   pha
 
 __RAMD_READ_MODE = . +1
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+;  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_ROM                        ;ROM MODUS
   sta IO_FINAL
   pla
   rts
@@ -4580,6 +4579,7 @@ DISK_CMD
 _relo0013 = . +1
   jsr GET_STRING
 
+DISK_CMD_2
   ldx LEN_FNAM
   beq PRINT_DISK_STAT
 _relo0100 = . +1
@@ -5026,7 +5026,7 @@ SET_CURSOR
 
 
   ;PRINT 2 BLANK
-SPCOUT2
+SPCOUT2 subroutine
 _relo0141 = . +1
   jsr SPCOUT
 SPCOUT
@@ -5034,21 +5034,21 @@ SPCOUT
   bne CHROUT
 
   ;CLEAR SCREEN
-CLROUT
+CLROUT subroutine
   lda #CLRHOME
   bne CHROUT
 
   ;PRINT CR
-CROUT
+CROUT subroutine
   lda #13
   bne CHROUT
 
   ;PRINT 2 CHR IN AC/XR
-CHROUT2
+CHROUT2 subroutine
 _relo0142 = . +1
   jsr CHROUT
   txa
-CHROUT
+CHROUT subroutine
   pha
   sta $d7
   txa
@@ -5056,30 +5056,31 @@ CHROUT
   tya
   pha
   lda $d7
-  bmi CHOU_7
+  bmi .7
   cmp #$20
-  bcs CHOU_1
+  bcs .1
   jmp $e756
 
-CHOU_1
+.1
   cmp #$60
-  bcc CHOU_2
+  bcc .2
   and #$df
-  bne CHOU_3
-CHOU_2
+  bne .3
+.2
   and #$3f
+.3
 CHOU_3
   ldx $c7                           ;revers?
-  beq CHOU_4
+  beq .4
   ora #$80
-CHOU_4
+.4
   ldx $0286                         ;Farbcode
   jsr $eaa1                         ;Zeichen ausgeben
   lda $d3
   cmp #$15
-  beq CHOU_5
+  beq .5
   inc $d3
-CHOU_5
+.5
   pla
   tay
   pla
@@ -5087,16 +5088,16 @@ CHOU_5
   pla
   rts
 
-CHOU_7
+.7
   and #$7f
   cmp #$20
-  bcs CHOU_8
+  bcs .8
   jmp $e82a
-CHOU_8
+.8
   ora #$40
-  bne CHOU_3
+  bne .3
 
-PUTCHR
+PUTCHR subroutine
   pha
   jsr $eab2                         ;zeiger in color RAM
   pla
@@ -5114,31 +5115,31 @@ PUTCHR3
 ; CONVERT CHAR TO VRAM CODE       C=1:CTRL CHAR
 ; ==============================================================
 
-CONVCHR
+CONVCHR subroutine
   STA C_CHR
 
   and #$7f
   cmp #$20
-  bcc COCHO_9
+  bcc .9
   ldx C_CHR
-  bpl COCHO_1
+  bpl .1
   ora #$40
-  bne COCHO_3
+  bne .3
 
-COCHO_1
+.1
   cmp #$60
-  bcc COCHO_2
+  bcc .2
   and #$df
-  bne CHOU_3
-COCHO_2
+  bne .3
+.2
   and #$3f
-COCHO_3
+.3
   ldx $c7                           ;revers?
-  beq COCHO_4
+  beq .4
   ora #$80
-COCHO_4
+.4
   sec
-COCHO_9
+.9
   rts
 
 
@@ -5146,7 +5147,7 @@ COCHO_9
 ; EVALUATE NEXT FORMULA ELEMENT
 ; ==============================================================
 
-MY_FRMELEM
+MY_FRMELEM subroutine
   lda #0
   sta $0d
   jsr CHRGET
@@ -5159,7 +5160,7 @@ MY_FRMELEM
   jmp $ce8d                             ; ORIGINAL PROC
 
 
-MYFR_HEX
+MYFR_HEX subroutine
 _relo0150 = . +1
   jsr GETHEX                            ; GET HEX NUMBER A=HI, X=LO, C=0:error
   bcc ERR_TYPMIS
@@ -5210,9 +5211,9 @@ ERR_TYPMIS
 ; CONVERT VALUES BETWEEN HEX/BIN
 ; ==============================================================
 
-GETADR                                    ; GET HEX NUMBER A=HI, X=LO, C=0:error
+GETADR  subroutine                      ; GET HEX NUMBER A=HI, X=LO, C=0:error
   jsr CHRGOT
-  cmp #"$"                                ; HEX VALUE
+  cmp #"$"                              ; HEX VALUE
   beq GETHEX
   clc
   rts
@@ -5222,29 +5223,29 @@ GETADR                                    ; GET HEX NUMBER A=HI, X=LO, C=0:error
 FRMWORD2
 _relo0160 = . +1
   jsr CHKCOM
-  bcs FRWO_3
+  bcs .3
 FRMWORD
   jsr FRMNUM
   jsr CNVWORD
   clc
-FRWO_3
+.3
   rts
 
 
-CHKCOM
+CHKCOM subroutine
   jsr CHRGOT
-  cmp #$2c                                ; ","
+  cmp #$2c                              ; ","
   sec
-  bne CHCO_3
+  bne .3
   jsr CHRGET
   clc
-CHCO_3
+.3
   rts
 
 
 
 
-GETHEX                                    ; GET HEX NUMBER A=HI, X=LO, C=0:error
+GETHEX subroutine                       ; GET HEX NUMBER A=HI, X=LO, C=0:error
   jsr CHRGET
 
 HEX_0
@@ -6097,7 +6098,7 @@ MY_WEDGE_END
 ; FIRMWARE FLASHER / 29F040 CODE
 ; ==============================================================
 
-FLASH_FW_DEST = 4700
+FLASH_FW_DEST = 4700                    ;$125c
 
 FLASH_FW_LEN = (FLASH_FW_END - FLASH_FW_START)
 
@@ -6150,10 +6151,11 @@ FLASHER subroutine
   jsr FLASH_ERASE
   bcs .err                              ; ERROR -->
 
-  jsr BLANK_CHECK
-  beq .05
+  jsr BLANK_CHECK_FULL
+  bcc .05
 
 .err
+  jsr FLASH_CROUT
   lda #<MSG_ERROR
   ldy #>MSG_ERROR
   jsr SY_STROUT
@@ -6309,7 +6311,8 @@ __flash_BANK = . +1
 .clc
   clc
 .exit
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+; lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_ROM                        ;ROM MODUS
   sta IO_FINAL
   rts
 
@@ -6360,7 +6363,7 @@ MSG_FLASH
 MSG_ERASE
   dc.b "ERASING ...",13,0
 MSG_BLANK
-  dc.b "BLANK CHECK ...",13,0
+  dc.b "BLANK CHECK ...",0
 
 
 
@@ -6466,27 +6469,63 @@ FLASH_FIRMWARE_2
 
 
 
+  ;ERASE CURRENT SECTOR
 FLASH_ERASE
   lda #<MSG_ERASE
   ldy #>MSG_ERASE
   jsr SY_STROUT
   jsr FlashCodeSectorErase
   bcs .err2
+  jsr FlashCodeEndSequ                  ; RESET
+  clc
+  rts
+
+
+  ;BLANK CHECK BANK 1 to 15
+BLANK_CHECK_FULL subroutine
+  lda #FEMOD_ROM_P                      ; EEP MODE
+.2
+  clc
+  adc #2
+  sta IO_FINAL
+  and #$10
+  bne .e                                ;BANK 16? -->
+
+  jsr BLANK_CHECK
+  beq .3
+
+  jsr FLASH_ERASE
+  bcc .4
+  rts
+
+.3
+  lda #145                              ;CURSOR UP
+  jsr BSOUT
+.4
+  lda IO_FINAL
+  bne .2
+.e
+  lda #FEMOD_ROM                        ; EEP MODE
+  sta IO_FINAL
+  jsr FLASH_CROUT
+  clc
+;.rts
   rts
 
 
 
+  ;BLANK CHECK BANK 0
 BLANK_CHECK subroutine
   lda #<MSG_BLANK
   ldy #>MSG_BLANK
-  jsr SY_STROUT
+  jsr P_BANK
 
-  jsr SET_SAVEPTR
-  jsr BLANK_CHECK_2
+  jsr SET_SAVEPTR_1
+  jsr .BLANK_CHECK
   bne .exit
 
   jsr SET_SAVEPTR_2
-BLANK_CHECK_2
+.BLANK_CHECK
   lda #$ff
 .02
   cmp (SAVESTART),y
@@ -6509,24 +6548,47 @@ SET_LOADPTR subroutine
   rts
 
 SET_SAVEPTR subroutine
-  lda #$70                                ;DEFAULT CARTRIDGE ADDRESS
-  sta SAVESTART +1
-  lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
-  sta SAVESTART
+  lda #$70                                ;FIRMWARE START ADDRESS
   ldx #16                                 ;BLOCK COUNT
-  ldy #0
-  rts
+  bne SET_SAVEPTR_E
 
+SET_SAVEPTR_1 subroutine
+  lda #$20                                ;DEFAULT LOW CARTRIDGE ADDRESS
+  ldx #96                                 ;BLOCK COUNT
+  bne SET_SAVEPTR_E
 
 SET_SAVEPTR_2 subroutine
-  lda #$A0                                ;DEFAULT CARTRIDGE ADDRESS
+  lda #$A0                                ;DEFAULT HI CARTRIDGE ADDRESS
+  ldx #32                                 ;BLOCK COUNT
+SET_SAVEPTR_E
   sta SAVESTART +1
   lda #$00                                ;DEFAULT CARTRIDGE ADDRESS
   sta SAVESTART
-  ldx #32                                 ;BLOCK COUNT
   ldy #0
   rts
 
+
+P_BANK subroutine
+  jsr SY_STROUT
+  lda IO_FINAL
+  jsr FLASH_HEXOUT
+;  lda #157                                ;CURSOR LEFT
+;  jmp BSOUT
+FLASH_CROUT subroutine
+  lda #13
+  jmp BSOUT
+
+
+FLASH_HEXOUT subroutine
+  and #15
+.1
+  clc
+  adc #246
+  bcc .12
+  adc #6
+.12
+  adc #58
+  jmp BSOUT
 
 
 
@@ -6575,6 +6637,13 @@ SPAR_MSGCLR
 SPAR_GETSTRING subroutine
   jsr SPAR_GETPTR
   jmp STRGET_2
+
+
+  ; SEND DISK COMMAND
+SPAR_DISKCMD subroutine
+  jsr SPAR_GETPTR
+  jsr STRGET_2
+  jmp DISK_CMD_2
 
 
   ; GET POINTER TO PARAMETER AT RETURN ADDRESS
