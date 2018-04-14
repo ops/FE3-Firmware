@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 017b
+; VIC 20 Final Expansion Cartridge - Revision 018
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -82,15 +82,15 @@ BIP     = $0200                      ;BASIC Input Buffer 88 Bytes
 BIP_E   = BIP +88                    ;BASIC Input Buffer End - Stack
 STP     = $0100                      ;LOW Stack - Text Buffer
 
-CAS_BUF = 828                        ;Kassetten Buffer
 
 IO_FINAL = $9c02                     ;FINAL EXPANSION REGISTER 1 (39938,39939)
 
 FEMOD_START = $00                    ;MODE START
 FEMOD_ROM   = $40                    ;MODE EEPROM (READ EEPROM, WRITE RAM)
-FEMOD_ROM_P = $20                    ;MODE FLASH EEPROM (READ EEPROM, WRITE EEPROM)
-FEMOD_RAM   = $80                    ;MODE SRAM (SRAM 40KB, BANK 0 and BANK 1)
-FEMOD_RAM2  = $A0                    ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
+FEMOD_FLASH = $20                    ;MODE FLASH EEPROM (READ EEPROM, WRITE EEPROM)
+FEMOD_RAM_1 = $80                    ;MODE SRAM (SRAM 40KB, BANK 0 and BANK 1)
+FEMOD_RAM_2 = $C0                    ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
+FEMOD_SRAM  = $A0                    ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
 
 
 SOFT_RESET = $fd22                   ;SOFT RESET
@@ -242,7 +242,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R017B", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R018 ", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -254,7 +254,7 @@ STARTUPSCREEN
 ;  dc.b CR, CR
   dc.b WHITE,RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
   dc.b "",RVSON,"f8",RVSOFF,"  basic (NORMAL)", CR, CR, CR
-  dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #8"
+  dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #"
   dc.b $00
 
 
@@ -458,7 +458,7 @@ COPYROM_2
   ;sty CARTID
   ;sty CARTID +1
 
-  lda #FEMOD_RAM +$10                   ; ALL RAM, PROTECT BLK-5
+  lda #FEMOD_RAM_1 +$10                 ; ALL RAM, PROTECT BLK-5
   sta IO_FINAL
   sec
 .02
@@ -487,6 +487,7 @@ START2 subroutine
 ; if C=, go straight to BASIC.
   cmp #$02
   bne .SHIFT
+.basic
   jmp BASIC
 
 ; if SHIFT, go straight to BASIC with wedge enabled.
@@ -499,9 +500,11 @@ START2 subroutine
 .01
   lda #FEMOD_ROM                        ;ROM
   jsr UNLOCK_IO                         ;UNLOCK IO
+  bne .basic
   jsr COPYROM
-  bcc .wedge
+  bcc .basic
 
+  ;CARTID
 
 
 ; ==============================================================
@@ -513,6 +516,7 @@ SSCREEN subroutine
   lda #<STARTUPSCREEN
   ldy #>STARTUPSCREEN
   jsr STROUT_R
+  jsr SHOWDRIVE
 
 SETUPTIMEOUT
   ;Initialize Timer
@@ -610,7 +614,7 @@ STROUT_R subroutine
   sta IO_FINAL
   pla
   jsr STROUT
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_RAM_1 +$10                 ;RAM MODUS, BLK-5 PROTECTED
   sta IO_FINAL
   rts
 
@@ -744,6 +748,9 @@ WAITSPACE
 WASP_1
   rts
 
+WAIT_KEY_TX
+  jsr SPAR_PRINTSTRING
+  dc.b 13,13,"PRESS ANY KEY ...",13,0
 WAIT_KEY
   jsr GETIN
   cmp #0
@@ -785,7 +792,7 @@ CHECKDRIVE
 CHECKLOW
   lda F_CURDEV
   sbc #$08
-  bcs CHECKHIGH  
+  bcs CHECKHIGH
   lda #$08
   sta F_CURDEV
 CHECKHIGH
@@ -852,7 +859,7 @@ F1_1
   bne F2_1
 
   ;jsr SetVicAs3K
-  lda #FEMOD_RAM +$1E                   ;3KB RAM
+  lda #FEMOD_RAM_1 +$1E                 ;3KB RAM
   bne SET_RAM
 
 F2_1
@@ -860,7 +867,7 @@ F2_1
   bne F3_1
 
   ;jsr SetVicAs8K
-  lda #FEMOD_RAM +$1D                   ;8KB RAM
+  lda #FEMOD_RAM_1 +$1D                 ;8KB RAM
   bne SET_RAM
 
 F3_1
@@ -868,7 +875,7 @@ F3_1
   bne F4_1
 
   ;jsr SetVicAs16K
-  lda #FEMOD_RAM +$19                   ;16KB RAM
+  lda #FEMOD_RAM_1 +$19                 ;16KB RAM
   bne SET_RAM
 
 F4_1
@@ -876,7 +883,7 @@ F4_1
   bne F5_1
 
   ;jsr SetVicAs24K
-  lda #FEMOD_RAM +$11                   ;24KB RAM
+  lda #FEMOD_RAM_1 +$11                 ;24KB RAM
   bne SET_RAM
 
 F5_1
@@ -884,14 +891,14 @@ F5_1
   bne F6_1
 
   ;jsr SetVicAs24K
-  lda #FEMOD_RAM +$10                   ;24+3KB RAM
+  lda #FEMOD_RAM_1 +$10                 ;24+3KB RAM
   bne SET_RAM
 
 F6_1
   cmp #$8b  ;F6
   bne F7_1
 
-  lda #FEMOD_RAM                        ;3KB RAM
+  lda #FEMOD_RAM_1                      ;3KB RAM
   ldx #$FF                              ;OFF
   jmp RESET_SYSTEM
 
@@ -900,7 +907,7 @@ F7_1
   bne F8_1
 
   ;jsr SetVicAs24K
-  lda #FEMOD_RAM                        ;ALL RAM
+  lda #FEMOD_RAM_1                      ;ALL RAM
   bne SET_RAM
 
 F8_1
@@ -947,6 +954,7 @@ WEF2
 SET_RAM
   ;sta DL_IOBASE
   sta IO_FINAL
+  sta CARTID                            ;DELETE CARTRIDGE ID IF RAM
   pha
   ldx F_IO
   cpx #"."
@@ -1059,11 +1067,12 @@ UNLOCK_IO
 
 ;-------- UNLOCK START MODE AND SET MODE
 __UNLOCK_IO
-  sei
+;  sei
   ldx $a000                             ;
   stx $a000                             ;UNLOCK IO
   sta IO_FINAL
-  cli
+  cmp IO_FINAL
+;  cli
   rts
 __UNLOCK_IO_E
 
@@ -1084,7 +1093,7 @@ TEST_RAM
 __TEST_RAM
   ;ldx IO_FINAL
   sei
-  lda #FEMOD_RAM                        ;RAM
+  lda #FEMOD_RAM_1                      ;RAM
   sta IO_FINAL
 
   ldy #0
@@ -1609,7 +1618,7 @@ MENU_SEL_INIT subroutine
   sta DL_CNTLDR
   jsr INV_ADDR
 
-  lda #FEMOD_RAM                        ;RAM SELECT
+  lda #FEMOD_RAM_1                      ;RAM SELECT
   sta DL_IOBASE
   lda #0                                ;ALL RESOURCES
   sta DL_IOBASE +1
@@ -2365,7 +2374,7 @@ FLLO_STARTADR = $2000
 
 
 FIRMW_FLASHER subroutine
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_RAM_1 +$10                 ;RAM MODUS, BLK-5 PROTECTED
   sta IO_FINAL
   jsr SetVicMemConfig
 
@@ -2453,7 +2462,7 @@ MENU_FLASHER subroutine
   cpx #TOK_RELO                         ;RELOAD
   beq .exit
 
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_RAM_1 +$10                 ;RAM MODUS, BLK-5 PROTECTED
   sta IO_FINAL
   jsr SetVicMemConfig
 
@@ -2495,7 +2504,7 @@ FLASH_PACKAGE_DEBUG
   bcs .errflash
 
 .wait
-  jsr WAIT_KEY
+  jsr WAIT_KEY_TX
 .exit
   jmp CART_FLASHER
 
@@ -2535,7 +2544,7 @@ FLASH_PACKAGE subroutine
   stx SAVESTART
   sta SAVESTART +1
   tya
-  ora #FEMOD_ROM_P                      ;PROG MODE
+  ora #FEMOD_FLASH                      ;PROG MODE
   sta __flash_BANK
 
   ldy #0
@@ -2588,7 +2597,7 @@ FLASH_ENTRY subroutine
   sta SAVESTART
   stx SAVESTART +1
 
-  lda #FEMOD_ROM_P                      ;PROG MODE, BANK 0
+  lda #FEMOD_FLASH                      ;PROG MODE, BANK 0
   sta __flash_BANK
 
   ldy #0
@@ -3069,7 +3078,7 @@ CLHDR_END   = 5                         ;STRUCT LDHDR LEN
 
 
 ; ========================================================================
-; FLASH STATISTIC
+; FLASH STATISTIC (F6,F3)
 ; get info: number of entries, bytes free, bytes allocated
 ; print info, wait for key
 ; ========================================================================
@@ -3077,15 +3086,18 @@ CLHDR_END   = 5                         ;STRUCT LDHDR LEN
 CLO_STARTADR = $2000
 
 FLASH_INFO subroutine
-  ;jsr CLROUT                            ;CLEAR SCREEN
+  ;jsr CLROUT                           ;CLEAR SCREEN
   jsr SPAR_PRINTSTRING
   dc.b CLRHOME,FONT2,YELLOW
   dc.b "## fLASH sTATUS ##",13,13,13
   dc.b WHITE,"eNTRIES: ",0
 
-  jsr FLASH_SEARCH_END                   ;SEARCH LAST ENTRY
-  txa
-  jsr HEXOUT2
+  jsr FLASH_SEARCH_END                  ;SEARCH LAST ENTRY
+  lda #0
+  jsr PRNINT                            ;print integer in X/A
+
+  ;txa
+  ;jsr HEXOUT2
 
   jsr SPAR_PRINTSTRING
   dc.b 13,13,13,"bYTES FREE:$",0
@@ -3360,7 +3372,7 @@ __RAMD_PUTC subroutine
   pha
 
 __RAMD_WRITE_BANK = . +1
-  lda #FEMOD_RAM2 + 0                   ;SUPER RAM MODUS, BANK 0
+  lda #FEMOD_SRAM + 0                   ;SUPER RAM MODUS, BANK 0
   sta IO_FINAL
 
   pla
@@ -3368,7 +3380,7 @@ __RAMD_WRITE_ADR = . +1
   sta FLLO_STARTADR
 
 __RAMD_WRITE_MODE = . +1
-  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+  lda #FEMOD_RAM_1 +$10                  ;RAM MODUS, BLK-5 PROTECTED
 ; lda #FEMOD_ROM                        ;ROM MODUS
   sta IO_FINAL
   rts
@@ -3378,7 +3390,7 @@ __RAMD_WRITE_MODE = . +1
 
 __RAMD_GETC subroutine
 __RAMD_READ_BANK = . +1
-  lda #FEMOD_RAM2 + 0                   ;SUPER RAM MODUS, BANK 0
+  lda #FEMOD_SRAM + 0                   ;SUPER RAM MODUS, BANK 0
   sta IO_FINAL
 
 __RAMD_READ_ADR = . +1
@@ -3386,7 +3398,7 @@ __RAMD_READ_ADR = . +1
   pha
 
 __RAMD_READ_MODE = . +1
-;  lda #FEMOD_RAM +$10                   ;RAM MODUS, BLK-5 PROTECTED
+;  lda #FEMOD_RAM_1 +$10                 ;RAM MODUS, BLK-5 PROTECTED
   lda #FEMOD_ROM                        ;ROM MODUS
   sta IO_FINAL
   pla
@@ -3675,8 +3687,6 @@ _relo5002 = . +1
   ldx #>MY_FRMELEM
   sta PTR_FRMELEM
   stx PTR_FRMELEM +1
-  lda #8
-  sta F_CURDEV
   rts
 
 
@@ -6139,7 +6149,7 @@ FLASHER subroutine
   sty LOADSTART +1
 
   ;sta $a000                             ; UNLOCK IO
-  lda #FEMOD_ROM_P                      ; PROG MODE
+  lda #FEMOD_FLASH                      ; PROG MODE
   sta IO_FINAL
 
   jsr TestEE
@@ -6299,7 +6309,7 @@ FlashCodeWrite subroutine
 FlashCodeWriteXP subroutine
   pha
 __flash_BANK = . +1
-  lda #FEMOD_ROM_P
+  lda #FEMOD_FLASH
   sta IO_FINAL
   pla
   jsr FlashCodeWrite
@@ -6431,12 +6441,12 @@ FLASH_FIRMWARE subroutine
   ;ldy #0
 FLASH_FIRMWARE_2
 .02
-  lda #FEMOD_RAM                        ; RAM MODE
+  lda #FEMOD_RAM_1                      ; RAM MODE
   sta IO_FINAL
   lda (LOADPTR),y
 
   pha
-  lda #FEMOD_ROM_P                      ; PROG MODE
+  lda #FEMOD_FLASH                      ; PROG MODE
   sta IO_FINAL
   pla
 
@@ -6483,7 +6493,7 @@ FLASH_ERASE
 
   ;BLANK CHECK BANK 1 to 15
 BLANK_CHECK_FULL subroutine
-  lda #FEMOD_ROM_P                      ; EEP MODE
+  lda #FEMOD_FLASH                      ; EEP MODE
 .2
   clc
   adc #2

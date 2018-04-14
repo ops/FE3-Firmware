@@ -1,0 +1,1 @@
+dasm.exe fe3r018.asm -ofe3firmware.prg -llist.txt

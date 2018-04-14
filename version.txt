@@ -2,6 +2,20 @@ FE3Firmware Revisions (compile with: dasm.exe fe3r017.asm -ofe3firmware.prg -lli
 
 
 
+
+R018 (bugfix):
+
++ Bug: drive# always set to 8 on entering main menu
+
++ Package Count should viewed in decimal (not hex)
+
++ new message after flashing (Cart Flasher): "press any key"
+
++ Bug: crash after F1, F7, yellow reset
+
+
+
+
 R017b (bugfix):
 
 + Flash bug - Bank 0 as package buffer
