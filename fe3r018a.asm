@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 018
+; VIC 20 Final Expansion Cartridge - Revision 018A
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
@@ -75,25 +75,24 @@ SY_FN       = $b8
 
 
 
-CHRGET  = $0073                      ;GET NEXT CHAR
-CHRGOT  = $0079                      ;GET LAST CHAR
+CHRGET  = $0073                         ;GET NEXT CHAR
+CHRGOT  = $0079                         ;GET LAST CHAR
 
-BIP     = $0200                      ;BASIC Input Buffer 88 Bytes
-BIP_E   = BIP +88                    ;BASIC Input Buffer End - Stack
-STP     = $0100                      ;LOW Stack - Text Buffer
-
-
-IO_FINAL = $9c02                     ;FINAL EXPANSION REGISTER 1 (39938,39939)
-
-FEMOD_START = $00                    ;MODE START
-FEMOD_ROM   = $40                    ;MODE EEPROM (READ EEPROM, WRITE RAM)
-FEMOD_FLASH = $20                    ;MODE FLASH EEPROM (READ EEPROM, WRITE EEPROM)
-FEMOD_RAM_1 = $80                    ;MODE SRAM (SRAM 40KB, BANK 0 and BANK 1)
-FEMOD_RAM_2 = $C0                    ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
-FEMOD_SRAM  = $A0                    ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
+BIP     = $0200                         ;BASIC Input Buffer 88 Bytes
+BIP_E   = BIP +88                       ;BASIC Input Buffer End - Stack
+STP     = $0100                         ;LOW Stack - Text Buffer
 
 
-SOFT_RESET = $fd22                   ;SOFT RESET
+IO_FINAL = $9c02                        ;FINAL EXPANSION REGISTER 1 (39938,39939)
+
+FEMOD_START = $00                       ;MODE START
+FEMOD_ROM   = $40                       ;MODE EEPROM (READ EEPROM, WRITE RAM)
+FEMOD_FLASH = $20                       ;MODE FLASH EEPROM (READ EEPROM, WRITE EEPROM)
+FEMOD_RAM_1 = $80                       ;MODE RAM 1 (READ::BANK 1,WRITE::BANK 1/2)
+FEMOD_RAM_2 = $C0                       ;MODE RAM 2 (WRITE::BANK 1,READ::BANK 1/2)
+FEMOD_SRAM  = $A0                       ;MODE BIG SRAM (SRAM 512KB, BANK 0 TO 15)
+
+SOFT_RESET = $fd22                      ;SOFT RESET
 CURSOR_POS = $e50a
 
 BSOUT      = $ffd2
@@ -242,7 +241,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R018 ", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R018a", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -3687,6 +3686,8 @@ _relo5002 = . +1
   ldx #>MY_FRMELEM
   sta PTR_FRMELEM
   stx PTR_FRMELEM +1
+  lda #$08
+  sta F_CURDEV
   rts
 
 

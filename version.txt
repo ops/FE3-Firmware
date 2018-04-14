@@ -3,6 +3,12 @@ FE3Firmware Revisions (compile with: dasm.exe fe3r017.asm -ofe3firmware.prg -lli
 
 
 
+R018a (bugfix):
+
++ Bug: device# not initialized after (reset) + F7
+
+
+
 R018 (bugfix):
 
 + Bug: drive# always set to 8 on entering main menu
