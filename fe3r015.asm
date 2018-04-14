@@ -1,4 +1,4 @@
-; VIC 20 Final Expansion Cartridge - Revision 014
+; VIC 20 Final Expansion Cartridge - Revision 015
 ; Thomas Winkler - July 27, 2009
 
 ; Thanks to Leif Bloomquist
@@ -72,6 +72,9 @@ CHRGET  = $0073                      ;GET NEXT CHAR
 CHRGOT  = $0079                      ;GET LAST CHAR
 
 BIP     = $0200                      ;BASIC Input Buffer 88 Bytes
+BIP_E   = BIP +88                    ;BASIC Input Buffer End - Stack
+STP     = $0100                      ;LOW Stack - Text Buffer
+
 CAS_BUF = 828                        ;Kassetten Buffer
 
 IO_FINAL = $9c02                     ;FINAL EXPANSION REGISTER 1 (39938,39939)
@@ -395,12 +398,11 @@ DEL
   jmp STARTWEDGE
 
 F2
-  cmp #$89  ;F2
-  bne F3
-  ;jsr INIT_DEF
-  jsr INIT_BASIC
-  jsr SY_INITMSG                        ; INIT Message
-  jmp DO_UNNEW
+;  cmp #$89  ;F2
+;  bne F3
+;  jsr INIT_BASIC
+;  jsr SY_INITMSG                        ; INIT Message
+;  jmp DO_UNNEW
 
 F3
   cmp #$86  ;F3
@@ -580,6 +582,9 @@ WASP_1
 ; ==============================================================
 HELP
   jsr HELP2
+  lda #<F8SCREEN
+  ldy #>F8SCREEN
+  jsr STROUT
   jmp WAITSPACE_2
 
 
@@ -1056,7 +1061,7 @@ HELPSCREEN3
   dc.b CR  ;RVSOFF Not Needed
   dc.b "sys41000 hELP", CR
   dc.b "sys41003 wEDGE", CR
-  dc.b "sys41006 wEDGE at $4", CR
+  dc.b "sys41006 wEDGE at $340", CR, CR, CR
   dc.b $00
 
 ; ==============================================================
@@ -1066,14 +1071,17 @@ HELPSCREEN3
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.1*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM  R014", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM  R015", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
-  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
+;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
+  dc.b CR, CR
   dc.b RVSON,"f3",RVSOFF," dISK lOADER", CR, CR
-  dc.b "",RVSON,"f4",RVSOFF,"  hELP", CR, CR
-  dc.b RVSON,"f5",RVSOFF," cART lOADER", CR, CR
-  dc.b "",RVSON,"f6",RVSOFF,"  fe3 uTILITIES", CR, CR
-  dc.b RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
+  dc.b RVSON,"f4",RVSOFF,"  hELP", CR, CR
+;  dc.b RVSON,"f5",RVSOFF," cART lOADER", CR, CR
+  dc.b CR, CR
+;  dc.b RVSON,"f6",RVSOFF,"  fe3 uTILITIES", CR, CR
+  dc.b CR, CR
+  dc.b WHITE,RVSON,"f7",RVSOFF," basic (wEDGE)", CR, CR
   dc.b "",RVSON,"f8",RVSOFF,"  basic (NORMAL)", CR, CR, CR
   dc.b RVSON,"+",RVSOFF,"/",RVSON,"-",RVSOFF," dRIVE #8"
   dc.b $00
@@ -1090,7 +1098,7 @@ RAMSCREEN
   dc.b RVSON,"f3",RVSOFF," 16 kb (19967)", CR, CR
   dc.b "",RVSON,"f4",RVSOFF,"  24 kb (28159)", CR, CR
   dc.b RVSON,"f5",RVSOFF," 24+3 kb (28159)", CR, CR
-  dc.b "",RVSON,"f6",RVSOFF,"  oFF", CR, CR
+  dc.b "",RVSON,"f6",RVSOFF,"  oFF (NO wEDGE!)", CR, CR
   dc.b RVSON,"f7",RVSOFF," aLL ram (28159)", CR, CR, CR
   dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
   dc.b "io ",RVSON,"r",RVSOFF,"EGISTER ( )", CR
@@ -1114,6 +1122,7 @@ UTILSCREEN
   ;dc.b "",RVSON,"f6",RVSOFF,"  oFF", CR, CR
   dc.b CR, CR
   dc.b RVSON,"f7",RVSOFF," rESTORE fLASH", CR, CR, CR
+F8SCREEN
   dc.b "",RVSON,"f8",RVSOFF,"  mAIN mENU", CR, CR, CR
   dc.b $00
 
@@ -1541,9 +1550,9 @@ MESE_EE
 ; + Anweisungen vom Stack ausführen
 ; ========================================================================
 
-BIP_CMD     = BIP +80                      ;COMMAND BYTE
-BIP_IOBASE  = BIP +81                      ;BASE FOR IO2 REGISTER 1 AND 2
-BIP_RUNADR  = BIP +83                      ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
+BIP_CMD     = STP +0                    ;COMMAND BYTE
+BIP_IOBASE  = STP +1                    ;BASE FOR IO2 REGISTER 1 AND 2
+BIP_RUNADR  = STP +3                    ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
 
 
 MESE_E
@@ -2552,7 +2561,7 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w           _relo0071,_relo0072
   dc.w _relo0080,_relo0081,_relo0082,_relo0083,_relo0084,_relo0085,_relo0086,_relo0087,_relo0088,_relo0089
   dc.w _relo0090,_relo0091,_relo0092,_relo0093,_relo0094,_relo0095,_relo0096
-  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104
+  dc.w _relo0100,_relo0101,_relo0102,_relo0103,_relo0104,_relo0105,_relo0106
   dc.w _relo0110,_relo0111,_relo0112,_relo0113,_relo0114,_relo0115,_relo0116,_relo0117,_relo0118,_relo0119
   dc.w _relo0120,_relo0121,_relo0122,_relo0123,_relo0124,_relo0125,_relo0126,_relo0127,_relo0128,_relo0129
   dc.w _relo0130,_relo0131,_relo0132,_relo0133,_relo0134,_relo0135
@@ -2568,11 +2577,12 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.w _relo0250,_relo0251
   dc.w _relo0300,_relo0301,_relo0302,_relo0303,_relo0304,_relo0305,_relo0306,_relo0307,_relo0308,_relo0309
   dc.w _relo0310,_relo0311,_relo0312,_relo0313,_relo0314,_relo0315,_relo0316,_relo0317,_relo0318,_relo0319
-  dc.w _relo0320,_relo0321,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
+  dc.w _relo0320          ,_relo0322,_relo0323,_relo0324 ;,_relo0325,_relo0326,_relo0327,_relo0328,_relo0329
   dc.w _relo0350,_relo0351,_relo0352,_relo0353,_relo0354,_relo0355,_relo0356,_relo0357,_relo0358,_relo0359
-  dc.w _relo0360,_relo0361
+  dc.w _relo0360,_relo0361,_relo0362,_relo0363          ,_relo0365
   dc.w _relo0400,_relo0401,_relo0402,_relo0403,_relo0404,_relo0405,_relo0406,_relo0407,_relo0408,_relo0409
-  dc.w _relo0410;,_relo0411,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
+  dc.w _relo0410,_relo0411,_relo0412;,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
+  dc.w _relo0420,_relo0421;,_relo0412,_relo0413,_relo0414,_relo0415,_relo0416,_relo0417,_relo0418,_relo0419
   dc.w 0
 
   dc.b 2                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
@@ -2646,26 +2656,28 @@ INLO_LOOP2
   beq DO_VERIFY
   ;cmp #95                               ; SAVE? (left arrow)
   ;beq DO_SAVE
-  cmp #"#"                              ; DEVICE?
-  beq DO_SETDEV
-  cmp #","                              ; HEX CALC
-  beq DO_HEXCALC
 
 _relo0002 = . +1
   jsr TOKENIZER
   bne INLO_LOOP2b
+
+  jsr $c579                             ; CONVERT LINE
+  jsr CHRGET
+  cmp #"#"                              ; DEVICE?
+  beq DO_SETDEV
+  cmp #","                              ; HEX CALC
+  beq DO_HEXCALC
 INLO_LOOP2a
   pla
   pla
-  jmp $c496                             ; EXECUTE LINE
+  jsr CHRGOT
+  jmp $c7e7                             ; EXECUTE LINE
 
 
   ;LIST DISK CATALOG ($)
 DO_CATALOG
-_relo0010 = . +1
-  jsr GET_STRING
 _relo0011 = . +1
-  jmp PRINT_CATALOG
+  jmp PRINT_CATALOG                     ;JSR!!!!
 
 
   ;SET / LIST DEVICE# FOR DISK COMMANDS (#)
@@ -2676,8 +2688,6 @@ _relo0012 = . +1
 
   ;SEND DISK COMMAND (@)
 DO_DISKCMD
-_relo0013 = . +1
-  jsr GET_STRING
 _relo0014 = . +1
   jmp DISK_CMD
 
@@ -3133,7 +3143,11 @@ _relo0080 = . +1
   jsr DISK_LISTEN
 _relo0081 = . +1
   jsr IECNAMOUT
+  bcc MYLO_00a
+MYLO_ERR2
+  rts
 
+MYLO_00a
   lda #$60
 _relo0082 = . +1
   jsr DISK_TALK
@@ -3189,13 +3203,20 @@ _relo0087 = . +1
 
 MYLO_ERR
 _relo0302 = . +1
-  jsr UNTALK
-_relo0088 = . +1
-  jsr DISK_CLOSE
+  jsr DISK_CLOSE_LO
   jmp $f787
 
 
 MYLO_5
+  jsr CHKSTOP
+  bne MYLO_05a
+
+_relo0088 = . +1
+  jsr DISK_CLOSE_LO
+  jmp $f6ce
+
+
+MYLO_05a
 _relo0089 = . +1
   jsr MY_IECIN2
 MYLO_6
@@ -3220,13 +3241,19 @@ MYLO_7a
   bvc MYLO_5                            ; EOI?
 
 MYLO_E
-_relo0303 = . +1
-  jsr UNTALK
 _relo0090 = . +1
-  jsr DISK_CLOSE
+  jsr DISK_CLOSE_LO
 
 _relo0091 = . +1
   jsr PRINT_TOADR
+
+  ;PRINT DISKERR ON ERROR
+  lda SY_STATUS
+  pha                                   ;SAVE IECSTAT FOR VERIFY!!!
+_relo0412 = . +1
+  jsr PRINT_DISK_ERR
+  pla
+  sta SY_STATUS
 
   clc
   ldx LOADEND
@@ -3321,12 +3348,14 @@ MY_SAVE
 
 
 MY_IECSAVE
+_relo0420 = . +1
   jsr FRMWORD2                          ; GET WORD VALUE
   bcs MYSA_0
 
   sty LOADSTART
   sta LOADSTART +1
 
+_relo0421 = . +1
   jsr FRMWORD2                          ; GET WORD VALUE
   bcs MYSA_0
 
@@ -3345,6 +3374,7 @@ _relo0400 = . +1
   jsr DISK_LISTEN
 _relo0401 = . +1
   jsr IECNAMOUT
+  bcs MYSA_ERR
 
   lda #$61
 _relo0402 = . +1
@@ -3389,10 +3419,13 @@ _relo0408 = . +1
   jsr UNLISTEN
 _relo0409 = . +1
   jsr DISK_CLOSE_SA
-_relo0410 = . +1
   ldx #LOADSTART
+_relo0410 = . +1
   jsr PRINT_TOADR_2
+_relo0411 = . +1
+  jsr PRINT_DISK_ERR
   clc
+MYSA_ERR
   rts
 
 
@@ -3404,18 +3437,35 @@ _relo0410 = . +1
 
   ;DISK CMD PARAM       :: +@"cmd"
 DISK_CMD
+_relo0013 = . +1
+  jsr GET_STRING
+
   ldx LEN_FNAM
   beq PRINT_DISK_STAT
-  lda #$6f                              ; channel
 _relo0100 = . +1
-  jsr DISK_LISTEN
+  jsr DISK_LISTEN_6F
 
+
+  ;PUT NAME TO IEC AND UNLISTEN
 IECNAMOUT
   lda IECSTAT
-  bmi DICM_ERR
+  bmi DICM_ERR1
 
+_relo0363 = . +1
+  jsr IECNAMOUT_2
+DICM_OK2
+_relo0306 = . +1
+  jsr UNLISTEN
+DICM_OK
+  clc
+  rts
+
+
+
+  ;PUT NAME TO IEC
+IECNAMOUT_2
   ldx LEN_FNAM
-  beq DICM_ERR
+  beq DICM_OK2
   ldy #0
 DICM_2
   lda (PTR_FNAM),y
@@ -3424,11 +3474,20 @@ _relo0305 = . +1
   iny
   dex
   bne DICM_2
-DICM_ERR
-_relo0306 = . +1
-  jmp UNLISTEN
+  rts
 
 
+  ;CHECK 'DEVICE NOT PRESENT'
+CHKDNP
+_relo0106 = . +1
+  jsr DISK_LISTEN_6F
+  bcc DICM_OK2
+DICM_ERR1
+  jmp $f78a                             ;ERR 'DEVICE NOT PRESENT'    CF=1
+
+
+DISK_LISTEN_6F
+  lda #$6f                              ; channel
 DISK_LISTEN
   pha
   lda #0
@@ -3443,7 +3502,12 @@ _relo0307 = . +1
   jsr LISTEN
   pla
 _relo0308 = . +1
-  jmp LISTENSA
+  jsr LISTENSA
+DITA_5
+  lda IECSTAT
+  bpl DICM_OK
+  sec
+  rts
 
 
 DISK_TALK
@@ -3463,7 +3527,9 @@ DISK_CLOSE_SA
   lda #$e1
   bne DICL_1
 
-DISK_CLOSE
+DISK_CLOSE_LO
+_relo0303 = . +1
+  jsr UNTALK
   lda #$e0
 DICL_1
 _relo0101 = . +1
@@ -3476,17 +3542,19 @@ _relo0311 = . +1
 PRINT_DISK_STAT
 _relo0102 = . +1
   jsr GET_DISK_STAT
+PRINT_BIP_0
+  bcs PRDI_E
 PRINT_BIP
   ldy #0
 PRDI_2
-  lda BIP,y
+  lda STP,y
   beq PRDI_7
   jsr BSOUT
   iny
   bne PRDI_2
 PRDI_7
   tya
-  beq PRDI_E
+;  beq PRDI_E
   ;lda #13
   ;jsr BSOUT
 PRDI_E
@@ -3497,26 +3565,26 @@ PRDI_E
 PRINT_DISK_ERR
 _relo0103 = . +1
   jsr GET_DISK_STAT
-  bne PRINT_BIP
+  bne PRINT_BIP_0
   rts
 
 
 
 ; LOAD DISK STAT TO BIP
 GET_DISK_STAT
-  lda #0
-  sta IECSTAT
-;  lda #8                                ; device#
-;  jsr TALK
-  lda #$6f                              ; channel
 _relo0104 = . +1
+  jsr CHKDNP
+  bcs DIST_ERR
+
+  lda #$6f                              ; channel
+_relo0105 = . +1
   jsr DISK_TALK
 
   ldy #0
 DIST_2
 _relo0312 = . +1
   jsr IECIN
-  sta BIP,y
+  sta STP,y
   iny
   lda IECSTAT
   beq DIST_2
@@ -3526,20 +3594,22 @@ _relo0313 = . +1
   tya
   beq DIST_7
   lda #13
-  cmp BIP,y
+  cmp STP,y
   bne DIST_7
-  sta BIP,y
+  sta STP,y
   iny
 DIST_7
   lda #0
-  sta BIP,y
-  lda BIP
+  sta STP,y
+  lda STP
   cmp #"0"
   bne DIST_E
-  eor BIP +1
+  eor STP +1
   beq DIST_E
   cmp #1
 DIST_E
+  clc
+DIST_ERR
   rts
 
 
@@ -3553,14 +3623,26 @@ DIST_E
 
   ;DISK CATALOG       :: +$"fil"
 PRINT_CATALOG
+_relo0010 = . +1
+  jsr GET_STRING
+
   lda #$f0                              ; channel
 _relo0110 = . +1
   jsr DISK_LISTEN
+  bcc PRCA_0
+  rts
+
+PRCA_0
   lda #"$"
 _relo0314 = . +1
   jsr IECOUT
 _relo0111 = . +1
-  jsr IECNAMOUT
+  jsr IECNAMOUT_2
+  lda #"*"
+_relo0362 = . +1
+  jsr IECOUT
+_relo0365 = . +1
+  jsr UNLISTEN
 
   lda #$60
 _relo0112 = . +1
@@ -3679,10 +3761,9 @@ _relo0130 = . +1
   jsr CROUT                             ; CR
 PRCA_E
 PRCA_EE
-_relo0321 = . +1
-  jsr UNTALK
+PRCA_ERR
 _relo0131 = . +1
-  jmp DISK_CLOSE
+  jmp DISK_CLOSE_LO
 
 
 
