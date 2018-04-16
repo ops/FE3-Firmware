@@ -1,5 +1,8 @@
 FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -llist.txt):
 
+R022e (May, 31st, 2015):
++ Moved Basic-Relinker call
+
 R022d:
 + Added support for large loader files (patched by denial-user "dabone")
 
