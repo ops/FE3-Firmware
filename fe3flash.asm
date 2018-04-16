@@ -154,9 +154,12 @@ TestEE
   jsr FlashCodeVendorID
   tya
   pha
-;     ldx #$01
   cpx #$01                              ; AMD
+  beq .VENDOROK
+  cpx #$c2                              ; AMD by MX
   bne EE_ERR0
+
+.VENDOROK
   lda #0
   jsr HEXOUT
 

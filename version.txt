@@ -1,6 +1,15 @@
 FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -llist.txt):
 
+R021:
 
++ Added support for AMD flash chips with MX signature ($c2 instead of $01)
+  (Patch by Nils Eilers)
+  
++ Added Makefile to assemble under Linux / OSX environment
+
++ Changed filename from FE3FIRMWARE.PRG to FEFIRMWARE without .PRG since the 
+  firmware's updater supports both filenames, but FE3FLASH.PRG 
+  supports only FE3FIRMWARE without .PRG
 
 R020:
 

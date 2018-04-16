@@ -1,9 +1,10 @@
-; VIC 20 Final Expansion Cartridge - Revision 020
+; VIC 20 Final Expansion Cartridge - Revision 021
 ; Thomas Winkler - Sep. 2009
 
 ; Thanks to Leif Bloomquist
 ; Thanks to everyone on the Denial forums
 ; http://www.sleepingelephant.com/denial/
+; Flash patch r021 by Nils Eilers
 
   processor 6502                        ;VIC20
 
@@ -242,7 +243,7 @@ dati = 2		;128	;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM R020 ", CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM R021 ", CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
@@ -366,10 +367,11 @@ THECREDITS
   dc.b "JEFF DANIELS", CR
   dc.b "MICHAEL KLEIN", CR
   dc.b "DAVID A. HOOK", CR
+  dc.b "NILS EILERS", CR
   dc.b "TOMMY WINKLER", CR, CR
   dc.b PURPLE
   dc.b "WWW.SLEEPINGELEPHANT", CR
-  dc.b "        .COM/DENIAL/", CR
+  dc.b ".COM/DENIAL/", CR
   dc.b BLUE
   dc.b $00
 
@@ -803,9 +805,9 @@ SETUPTIMEOUT
   jsr WAIT_KEY
 
 .DENIAL
-  cmp #$44   ;D
+  cmp #$43			; 'C' --> show credits
   bne .F1
-  ;jsr CREDITS
+  jsr CREDITS
   jmp WAITSPACE_2
 
 .F1
@@ -6952,10 +6954,12 @@ TestEE subroutine
   jsr FlashCodeVendorID
   tya
   pha
-;     ldx #$01
   cpx #$01                              ; AMD
+  beq .VENDOROK
+  cpx #$c2                              ; AMD by MX
   bne .ERR0
 
+.VENDOROK
   lda #<MSG_DEVICEID
   ldy #>MSG_DEVICEID
   jsr SY_STROUT
