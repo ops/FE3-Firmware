@@ -1332,7 +1332,7 @@ RUNBASIC
 __SET_IO_RUN
   sta IO_FINAL
   stx IO_FINAL +1
-  jsr SY_PGMLINK                        ;Relinks BASIC Program from and to any address...
+;  jsr SY_PGMLINK                        ;Relinks BASIC Program from and to any address...
   lda #0
   jsr $ff90
   JSR SY_BASCLR2                        ;CLR
@@ -4107,7 +4107,7 @@ BASLOAD_END
 BASLOAD_END_2
   stx BASVAR
   sty BASVAR +1
-  ;jsr SY_PGMLINK
+  jsr SY_PGMLINK
 DOLO_E
   clc                                   ; LOAD OK
   rts
