@@ -1,3 +1,9 @@
+v0.23 (2018-xx-xx)
++ Restored version R022D Basic-Relinker call related code. Users seem to
+  have problems with
+
+
+------------------------------------------------------------------------------
 FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -llist.txt):
 
 R022e (May, 31st, 2015):
