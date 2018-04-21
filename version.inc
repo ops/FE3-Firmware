@@ -1,0 +1,1 @@
+FW_VERSION = "V0.23"

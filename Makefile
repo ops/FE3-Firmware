@@ -1,19 +1,35 @@
+#
+# Makefile for FE3-Firmware and utils
+#
 
-TARGET = fe3firmware
+include version.inc
 
 AS = dasm
+ASFLAGS = -f3
 
-$(TARGET): fe3firmware.asm
-	$(AS) fe3firmware.asm -v4 -f3 -o$@
+ifdef verbose
+	ASFLAGS += -v$(verbose)
+endif
+
+all: fe3firmware fe3diag.prg fe3flash.prg
+
+fe3firmware: fe3firmware.asm
+	$(AS) $< $(ASFLAGS) -o$@
 
 fe3diag.prg: fe3diag.asm
-	$(AS) fe3diag.asm -v4 -f3 -o$@
+	$(AS) $< $(ASFLAGS) -o$@
 
 fe3flash.prg: fe3flash.asm
-	$(AS) fe3flash.asm -v4 -f3 -o$@
+	$(AS) $< $(ASFLAGS) -o$@
 
+release:
+	zip fe3firmware-$(shell echo $(FW_VERSION) | tr -d \").zip \
+		fe3firmware \
+		fe3diag.prg \
+		fe3flash.prg
 clean:
-	$(RM) $(TARGET)
+	$(RM) fe3firmware
 	$(RM) fe3diag.prg
 	$(RM) fe3flash.prg
 	$(RM) *~
+	$(RM) *.zip
