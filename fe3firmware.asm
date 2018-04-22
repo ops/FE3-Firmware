@@ -130,11 +130,11 @@ CINT1   = $e518     ; Initialize I/O
 CLRSCN  = $e55f     ; clear screen
 
 ; TurboLoad
-secnd	= $ff93	    ; send secondary address for LISTEN
-ciout	= $ffa8     ; write serial data
-unlsn	= $ffae	    ; send UNLISTEN command
-listn	= $ffb1	    ; send LISTEN command
-fa	= $ba	    ; Current Device Number
+secnd   = $ff93     ; send secondary address for LISTEN
+ciout   = $ffa8     ; write serial data
+unlsn   = $ffae     ; send UNLISTEN command
+listn   = $ffb1     ; send LISTEN command
+fa      = $ba       ; Current Device Number
 
 CLRCH   = $ffcc     ; Restore Default I/O status
 
@@ -189,9 +189,9 @@ store   = $fc
 
 mwcmd = $f7   ;f7-fc used first to temp store SETLFS & SETNAM parameters
               ;      and after to send the "M-W" command to the drive.
-	      ;      Since these operations are made before the
-	      ;      fastloading process i share the same location of
-	      ;      iec0d1a,iec0d1b,iec1d1a,iec1d1b and store variables.
+              ;      Since these operations are made before the
+              ;      fastloading process i share the same location of
+              ;      iec0d1a,iec0d1b,iec1d1a,iec1d1b and store variables.
               ;      Used as temp value for loader start routine too.
 
 ; shared address because used with CTRL+F1/F3/F5/F7
@@ -214,21 +214,21 @@ dir_screen_mem_page = $288 ; Screen memory page start (hi-byte)
 ; **************** I/O constants ****************************
 
 ; TurboLoad
-AMOUNT = $20	; amount of data bytes to transfer with one M-W command
-ESCBYTE = $ef	; the escape char used in the transfers
-RETRIES = 20	; amount of retries in reading a block
+AMOUNT = $20    ; amount of data bytes to transfer with one M-W command
+ESCBYTE = $ef   ; the escape char used in the transfers
+RETRIES = 20    ; amount of retries in reading a block
 
-DEFAULT_DEVICE = 8	; Default device number
+DEFAULT_DEVICE = 8      ; Default device number
 
 CheckByte = #214
 
-iecport1 = $912c	;$dd00	;$912c
-dato = 32		;32	;32
-clko = 2		;16	;2
-iecport2 = $911f	;$dd00	;$911f
-atno = 128		;8	;128
-clki = 1		;64	;1
-dati = 2		;128	;2
+iecport1 = $912c        ;$dd00  ;$912c
+dato = 32               ;32     ;32
+clko = 2                ;16     ;2
+iecport2 = $911f        ;$dd00  ;$911f
+atno = 128              ;8      ;128
+clki = 1                ;64     ;1
+dati = 2                ;128    ;2
 
 ; ***********************************************************************
 
@@ -660,7 +660,7 @@ GET_FILETYP subroutine
   dc.w RESTORE ; Entry point for warm start (RESTORE)
 
 CARTID
-  dc.b "A0",$C3,$C2,$CD	; 'A0CBM' boot string
+  dc.b "A0",$C3,$C2,$CD ; 'A0CBM' boot string
 
 
 SY_STROUT  = $cb1e                      ;String in AC/YR ausgeben
@@ -836,7 +836,7 @@ SETUPTIMEOUT
   jsr WAIT_KEY
 
 .DENIAL
-  cmp #$43			; 'C' --> show credits
+  cmp #$43                      ; 'C' --> show credits
   bne .F1
   jsr CREDITS
   jmp WAITSPACE_2
@@ -3742,33 +3742,33 @@ SetVicMemConfig  subroutine
   beq SetVicAs24K
 
 SetVicAs16K:                            ; set vic as 16k expanded
-  lda #$10			        ; Screen memory page start $1000 (hi-byte)
-  ldx #$12			        ; Start of memory $1200 (hi-byte)
-  ldy #$60			        ; Top of memory $6000 (hi-byte)
+  lda #$10                              ; Screen memory page start $1000 (hi-byte)
+  ldx #$12                              ; Start of memory $1200 (hi-byte)
+  ldy #$60                              ; Top of memory $6000 (hi-byte)
   bne dir_unexpand
 
 SetVicAsUnexpanded:                     ; set vic as unexpanded
-  lda #$1e			        ; Screen memory page start $1e00 (hi-byte)
-  ldx #$10			        ; Start of memory $1000 (hi-byte)
-  ldy #$1e			        ; Top of memory $1e00 (hi-byte)
+  lda #$1e                              ; Screen memory page start $1e00 (hi-byte)
+  ldx #$10                              ; Start of memory $1000 (hi-byte)
+  ldy #$1e                              ; Top of memory $1e00 (hi-byte)
   bne dir_unexpand
 
 SetVicAs3K:                             ; set vic as 3k expanded
-  lda #$1e			        ; Screen memory page start $1e00 (hi-byte)
+  lda #$1e                              ; Screen memory page start $1e00 (hi-byte)
   ldx #$04                              ; Start of memory $0400 (hi-byte)
   ldy #$1e                              ; Top of memory $1e00 (hi-byte)
   bne dir_unexpand
 
 SetVicAs8K:                             ; set vic as 8k expanded
-  lda #$10			        ; Screen memory page start $1000 (hi-byte)
-  ldx #$12			        ; Start of memory $1200 (hi-byte)
-  ldy #$40			        ; Top of memory $4000 (hi-byte)
+  lda #$10                              ; Screen memory page start $1000 (hi-byte)
+  ldx #$12                              ; Start of memory $1200 (hi-byte)
+  ldy #$40                              ; Top of memory $4000 (hi-byte)
   bne dir_unexpand
 
 SetVicAs24K:                            ; set vic as 24k expanded
-  lda #$10			        ; Screen memory page start $1000 (hi-byte)
-  ldx #$12			        ; Start of memory $1200 (hi-byte)
-  ldy #$80			        ; Top of memory $6000 (hi-byte)
+  lda #$10                              ; Screen memory page start $1000 (hi-byte)
+  ldx #$12                              ; Start of memory $1200 (hi-byte)
+  ldy #$80                              ; Top of memory $6000 (hi-byte)
 
 dir_unexpand:       ;@@@
   sta dir_screen_mem_page               ; Screen memory page start (hi-byte)
@@ -4420,7 +4420,7 @@ DO_UNNEW
   jmp BASIC_WARM        ; BASIC Warm Restart [RUNSTOP-RESTORE]
 
 ;UnNewMessage:
-;	.byte "PROGRAM RESTORED",0
+;       .byte "PROGRAM RESTORED",0
 
 
 
@@ -4561,26 +4561,26 @@ _relo0072 = . +1
 ; SYS PROCS
 ; ==============================================================
 
-;UNLISTEN = $ffae	                ; send UNLISTEN command
-;LISTEN	 = $ffb1	                ; send LISTEN command
-;LISTENSA = $ff93	                ; send SA for LISTEN command
-;TALK     = $ffb4	                ; send TALK command
-;UNTALK   = $ffab	                ; send UNTALK command
-;TALKSA   = $ff96	                ; send SA for TALK command
-;IECIN    = $ffa5	                ; get char from IEC
-;IECOUT   = $ffa8	                ; send char to IEC
+;UNLISTEN = $ffae                       ; send UNLISTEN command
+;LISTEN  = $ffb1                        ; send LISTEN command
+;LISTENSA = $ff93                       ; send SA for LISTEN command
+;TALK     = $ffb4                       ; send TALK command
+;UNTALK   = $ffab                       ; send UNTALK command
+;TALKSA   = $ff96                       ; send SA for TALK command
+;IECIN    = $ffa5                       ; get char from IEC
+;IECOUT   = $ffa8                       ; send char to IEC
 
-SETSTAT  = $fe6a	                ; set status
+SETSTAT  = $fe6a                        ; set status
 CHKSTOP  = $ffe1                        ; check stop key
 
-LISTEN	 = JIF_LISTEN                   ; send LISTEN command
-TALK     = JIF_TALK	                ; send TALK command
+LISTEN   = JIF_LISTEN                   ; send LISTEN command
+TALK     = JIF_TALK                     ; send TALK command
 LISTENSA = JIF_LISTENSA                 ; send SA for LISTEN command
-TALKSA   = JIF_TALKSA	                ; send SA for TALK command
-UNLISTEN = JIF_UNLISTEN	                ; send UNLISTEN command
-UNTALK   = JIF_UNTALK	                ; send UNTALK command
-IECIN    = JIF_IECIN	                ; get char from IEC
-IECOUT   = JIF_IECOUT	                ; send char to IEC
+TALKSA   = JIF_TALKSA                   ; send SA for TALK command
+UNLISTEN = JIF_UNLISTEN                 ; send UNLISTEN command
+UNTALK   = JIF_UNTALK                   ; send UNTALK command
+IECIN    = JIF_IECIN                    ; get char from IEC
+IECOUT   = JIF_IECOUT                   ; send char to IEC
 
 
 
@@ -4588,9 +4588,9 @@ IECOUT   = JIF_IECOUT	                ; send char to IEC
 ; MY LOAD
 ; ==============================================================
 
-FRMNUM   = $cd8a	                ; GET NUMERIC VALUE
-FRMBYTE  = $d79e	                ; GET BYTE VALUE TO X
-CNVWORD  = $d7f7	                ; CONVERT TO WORD VALUE INTO Y/A; $14 (PT3)
+FRMNUM   = $cd8a                        ; GET NUMERIC VALUE
+FRMBYTE  = $d79e                        ; GET BYTE VALUE TO X
+CNVWORD  = $d7f7                        ; CONVERT TO WORD VALUE INTO Y/A; $14 (PT3)
 
 
   ; LOAD VECTOR                         :: "fnam",PA,SA[,loadadr]
@@ -6580,7 +6580,7 @@ SET_BASE_VECTORS
 ;
 JChkIn subroutine
   jsr $f3cf                             ;search logical file#
-  beq .1	                        ;file not open error
+  beq .1                                ;file not open error
   jmp $f784                             ;err "file not open"
 
 .1
@@ -6610,7 +6610,7 @@ JChkIn subroutine
 ;
 JChkOut subroutine
   jsr $f3cf                             ;search logical file#
-  beq .1	                        ;file not open error
+  beq .1                                ;file not open error
   jmp $f784                             ;err "file not open"
 
 .1
