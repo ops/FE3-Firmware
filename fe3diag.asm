@@ -738,7 +738,7 @@ INC_BLOCK
   inc BLOCK +1
 INBL_2
   rts
-  
+
 
   ; SET BLK IN XR
 SET_BLK_X
