@@ -29,7 +29,7 @@ F_END       = CAS_BUF +5
 ;------------------------------
 
 
-FLGCOM  = $08                                                                   
+FLGCOM  = $08
 
 
 CHRPTR  = $7a                           ;Char Pointer
@@ -168,7 +168,7 @@ fl_current_logical_file = $b8
 fl_endprogram_address_lo = $ae ; is used as temp pointer of code
 fl_endprogram_address_hi = $af ; to send to the drive too
 fl_filename_pointer = $bb      ; $BB-$BC Pointer: to file name
-fl_output_control = $9d        ; Direct=$80/RUN=0 
+fl_output_control = $9d        ; Direct=$80/RUN=0
 
 fl_basicstartaddress_lo = $2b
 fl_basicstartaddress_hi = $2c
@@ -194,7 +194,7 @@ mwcmd = $f7   ;f7-fc used first to temp store SETLFS & SETNAM parameters
 	      ;      iec0d1a,iec0d1b,iec1d1a,iec1d1b and store variables.
               ;      Used as temp value for loader start routine too.
 
-; shared address because used with CTRL+F1/F3/F5/F7 
+; shared address because used with CTRL+F1/F3/F5/F7
 From_Lo    = $f7 ;FB        ;From address (lo-byte)
 From_Hi    = $f8 ;FC        ;From address (hi-byte)
 To_Lo      = $f9 ;FD        ;to address (lo-byte)
@@ -1137,7 +1137,7 @@ SHOWDRIVE
   cmp #$09
   beq DIGIT
   jmp DIGITS
-  
+
 DIGIT
   adc #$2F  ;convert to ascii
   jsr $ffd2
@@ -1643,11 +1643,11 @@ GETJOY
   lda $a2
   cmp F_JOYREP
   bne GEJO_E
-  
+
   clc
   adc #4
   sta F_JOYREP
-  
+
   sei
   lda VIA1 +$f
   and #$3c
@@ -1772,7 +1772,7 @@ MEHA_1
 MEHA_5
   jsr GETJOY
   tax
-  
+
   cmp #$00
   beq MEHA_5
 
@@ -5799,7 +5799,7 @@ _relo0200 = . +1
   jsr .2
 .0
   txa
-HEXOUT2  
+HEXOUT2
 .2
   pha
   lsr
