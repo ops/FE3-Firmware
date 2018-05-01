@@ -22,8 +22,8 @@ fe3diag.prg: fe3diag.asm
 fe3flash.prg: fe3flash.asm
 	$(AS) $< $(ASFLAGS) -o$@
 
-release:
-	zip fe3firmware-$(shell echo $(FW_VERSION) | tr -d \").zip \
+package:
+	zip fe3firmware-$(shell echo v$(FW_VERSION) | tr -d \").zip \
 		fe3firmware \
 		fe3diag.prg \
 		fe3flash.prg

@@ -233,7 +233,7 @@ dati = 2                ;128    ;2
 STARTUPSCREEN
 ; dc.b CLRHOME, WHITE, CR, RVSON, "DISK UTILITY CARTRIDGE", CR, CR
   dc.b CLRHOME,FONT2,YELLOW,RVSON,"*fINAL eXPANSION V3.2*", CR
-  dc.b RVSON,                     "512/512kb sYSTEM ", FW_VERSION, CR, CR, CR
+  dc.b RVSON,                     "512/512kb sYSTEM V", FW_VERSION, CR, CR, CR
   dc.b WHITE,RVSON,"f1",RVSOFF," ram mANAGER", CR, CR
 ;  dc.b "",RVSON,"f2",RVSOFF,"  basic uN-new", CR, CR
   dc.b CR, CR
