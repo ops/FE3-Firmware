@@ -27,9 +27,9 @@ Structure of the file "LOADER"
 The LOADER file consists of one or several sections. Each section is presented
 as a menu item in Diskloader. A section consists of:
 
-• a name : each section begins with a name in the menu displayed in Diskloader
-• one or more instructions
-•comment lines may be added optionally.
+- a name : each section begins with a name in the menu displayed in Diskloader
+- one or more instructions
+- comment lines may be added optionally.
 
 The section name will begin and end simply with a quotation mark ("). The name
 can be up to 20 characters and may include any special characters. If the name
@@ -58,14 +58,14 @@ Instructions
 Instruction lines always start with a plus sign (+). The following statements
 are recognized by Disk Loader and interpreted:
 
-• Load statement : Loads a file from a floppy disk or SD
-• Disk Command : Sends a command to the SD2IEC or to a floppy.
-• BLK, BLKP, BLKD : Instructions for configuring the FE3 hardware - block write protect or disable.
-• NOIO : Instructions for configuring the hardware FE3 – Hide FE3 IO registers.
-• RESET : Instruction to restart the VC-20 (Soft Reset)
-• SYS : Starts a machine code program at the given address (in hexadecimal!)
-• RUN : Starts a BASIC program
-• RELOAD: Restart command to the File Loader (runs the Loader script in the current directory)
+- Load statement : Loads a file from a floppy disk or SD
+- Disk Command : Sends a command to the SD2IEC or to a floppy.
+- BLK, BLKP, BLKD : Instructions for configuring the FE3 hardware - block write protect or disable.
+- NOIO : Instructions for configuring the hardware FE3 – Hide FE3 IO registers.
+- RESET : Instruction to restart the VC-20 (Soft Reset)
+- SYS : Starts a machine code program at the given address (in hexadecimal!)
+- RUN : Starts a BASIC program
+- RELOAD: Restart command to the File Loader (runs the Loader script in the current directory)
 
 The Load Statement loads a file from the SD card or from a floppy. Several
 load instructions can be sequenced if for example games with several parts
@@ -99,11 +99,12 @@ something into the cassette buffer from $330 onwards, this must be the last
 section! This is because the Disk Loader uses this area of memory.
 
 Examples of load commands:
-
+```
 + "MOONPATROL"
 + "EXBASIC2",C,$A000
 + "AUSTRO COMP",B
 + "VICMON",P,$3000
+```
 
 A Disk Command starts with the AT sign (@ ) followed by the actual command in
 quotes. You can send any possible commands to the target device (SD2IEC or
@@ -137,11 +138,13 @@ by default and must be turned off to get smaller or unexpanded memory
 configurations.
 
 The block numbers correspond to the physical blocks of the VIC-20:
-0 = 3K extension ($0400 - $0FFF)
+```
+0 = Block 0 ($0400-$0FFF)
 1 = Block 1 ($2000-$3FFF)
 2 = Block 2 ($4000-$5FFF)
 3 = Block 3 ($6000-$7FFF)
 5 = Block 5 ($A000-$BFFF)
+```
 
 The blocks can be disabled individually (BLKD) and protected against
 overwrite (BLK or BLKP).
@@ -159,11 +162,12 @@ free. A hardware reset puts the FE3 back to the original state and allows
 reconfiguration.
 
 Examples of configurations:
-
+```
 +BLK 1,3
 +BLKD 0,1,2,3
 +BLKP 0,1,2,3,5
 +NOIO
+```
 
 Loaded games or programs must be started, the commands RESET, RUN and SYS are
 available to do this. One of the three commands is used depending on the
@@ -178,7 +182,7 @@ wrong LOADER instructions. The statements can not be executed because for
 example, the file to load is longer accessible in the directory.
 
 Example
-
+```
 10 "HW Demo unexpanded"
 20 +"hello world",b
 30 +blk 0,1,2,3,5
@@ -204,3 +208,4 @@ Example
 230 : no blk command
 240 +run
 250 :
+```
