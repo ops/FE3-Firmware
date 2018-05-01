@@ -1,10 +1,14 @@
 v0.23 (2018-xx-xx)
 + Restored version R022D Basic-Relinker call related code. Users seem to
-  have problems with
+  have problems with it
 
 
 ------------------------------------------------------------------------------
 FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -llist.txt):
+
+Flash patch r021 by Nils Eilers
+firmware patch r022d by Dirk Vroomen, April 2014 (full ram for loader-files)
+firmware patch r022e by Dirk Vroomen, May 2015   (Basic-Relinker call missing)
 
 R022e (May, 31st, 2015):
 + Moved Basic-Relinker call
@@ -12,17 +16,17 @@ R022e (May, 31st, 2015):
 R022d:
 + Added support for large loader files (patched by denial-user "dabone")
 
-+ auto-start of first entry in loader file by pressing the <CTRL>-key on startup 
++ auto-start of first entry in loader file by pressing the <CTRL>-key on startup
 
 R021:
 
 + Added support for AMD flash chips with MX signature ($c2 instead of $01)
   (Patch by Nils Eilers)
-  
+
 + Added Makefile to assemble under Linux / OSX environment
 
-+ Changed filename from FE3FIRMWARE.PRG to FEFIRMWARE without .PRG since the 
-  firmware's updater supports both filenames, but FE3FLASH.PRG 
++ Changed filename from FE3FIRMWARE.PRG to FEFIRMWARE without .PRG since the
+  firmware's updater supports both filenames, but FE3FLASH.PRG
   supports only FE3FIRMWARE without .PRG
 
 R020:
@@ -35,13 +39,10 @@ R020:
 
   For files already existing you can choose "update" (two versions) or "replace".
 
-                                                                                
-
 
 R019a:
 
 + bug: SJLOAD doesn't close channel on Jffy devices so LED burns after LOAD (thanks to nbla000).
-
 
 
 R019:
@@ -50,7 +51,7 @@ R019:
 
 + SJLOAD: Now nearly all kernal IO vectors used: CHKIN,CKOUT,BSOUT,BASIN,CLALL,CLRCH (not only LOAD, SAVE)
 
-  This improves data access to jiffy devices (also in BASIC). 
+  This improves data access to jiffy devices (also in BASIC).
   Is not supported in Mini Wedge (Wedge in 3K LO-RAM, memory config F7).
 
 + SJLOAD: Messages only in direct mode. In program mode messages are suppressed.
@@ -191,13 +192,13 @@ R007:
     oder wahlweise in Anführungszeichen.
 
     Wenn ein Anführungszeichen an Spalte 4 ist (das ist beim Directory so) dann wird das String Argument
-    dort gelesen und Zeichen davor ignoriert. Dadurch kann man ein Directory anzeigen, mit dem Cursor 
+    dort gelesen und Zeichen davor ignoriert. Dadurch kann man ein Directory anzeigen, mit dem Cursor
     rauf gehen, einen Ladebefehl (/ oder %) schreiben und ENTER drücken, - fertig.
 
     Mit # kann die Standard Geräte Adresse geändert oder angezeigt werden. Normal ist sie auf 8 eingestellt.
 
-    Die Ladebefehle können auch optional eine gezwungene Ladeadresse haben, wenn der String Parameter 
-    in Anführungszeichen steht. Durch Angabe einer Ladeadresse geht der % Befehl in den Cartridge 
+    Die Ladebefehle können auch optional eine gezwungene Ladeadresse haben, wenn der String Parameter
+    in Anführungszeichen steht. Durch Angabe einer Ladeadresse geht der % Befehl in den Cartridge
     Lademodus (SA=2). Wie beim normalen LOAD werden jetzt Start- und Endadresse angezeigt.
 
   * Befehl RESET:
