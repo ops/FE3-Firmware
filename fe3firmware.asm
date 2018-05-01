@@ -1,12 +1,6 @@
-; VIC 20 Final Expansion Cartridge - Revision 022
-; Thomas Winkler - Sep. 2009
-
-; Thanks to Leif Bloomquist
-; Thanks to everyone on the Denial forums
-; http://www.sleepingelephant.com/denial/
-; Flash patch r021 by Nils Eilers
-; firmware patch r022d by Dirk Vroomen, April 2014 (full ram for loader-files)
-; firmware patch r022e by Dirk Vroomen, May 2015   (Basic-Relinker call missing)
+;;;
+;;; VIC-20 Final Expansion Cartridge firmware
+;;;
 
   processor 6502                        ;VIC20
 
@@ -101,7 +95,6 @@ CURSOR_POS = $e50a
 
 BSOUT      = $ffd2
 GETIN      = $ffe4
-
 
 
 OPEN    = $ffc0     ; Open Vector [F40A] Open File
@@ -231,11 +224,6 @@ clki = 1                ;64     ;1
 dati = 2                ;128    ;2
 
 ; ***********************************************************************
-
-
-
-
-
 
 
 ; ==============================================================
@@ -385,9 +373,6 @@ MSG_EXISTS
   dc.b CR,RVSON,"A",RVSOFF,"BORT ",RVSON,"R",RVSOFF,"EPLACE ",RVSON,"U",RVSOFF,"PDATE ",CR,0
 
 
-
-
-
 ; ==============================================================
 ; ROM $6 FUNCTIONS
 ; ==============================================================
@@ -408,8 +393,6 @@ DO_EXECUTE subroutine
 
 .2
   rts
-
-
 
 
 ; ==============================================================
@@ -493,16 +476,12 @@ RPROC_SAVE subroutine
   jmp .okul
 
 
-
-
 MSG_DEL_FILE
   dc.b "DELETING FILE ...",13,0
 MSG_DEL_OLDFILE
   dc.b "DELETING OLD FILE ...",13,0
 MSG_RENAME_FILE
   dc.b "RENAMING FILE ...",13,0
-
-
 
 
 ; ==============================================================
@@ -535,8 +514,6 @@ START_DISK_CMD subroutine
   pla
   sec
   rts
-
-
 
 
 ; =====================================================================
@@ -581,8 +558,6 @@ RPROC_LOADER  subroutine
 .ERR
   pla
   jmp LOAD_ERR
-
-
 
 
   ;PRINT LOAD MESSAGE
@@ -638,17 +613,11 @@ GET_FILETYP subroutine
   rts
 
 
-
-
-
 ; ==============================================================
 ; END :: ROM $6 FUNCTIONS
 ; ==============================================================
 
-
   rend
-
-
 
 
   org $a000,0                           ;$A000   (Fill value=0)
@@ -674,8 +643,6 @@ SY_INITIO2 = $e518
 SY_INITVEC2 = $e45b ; Init Vectors
 SY_BASRAM   = $e3a4 ; BASIC RAM
 SY_INITMSG  = $e404 ; INIT Message (needed so keycheck routine below works)
-
-
 
 
 START
@@ -735,7 +702,6 @@ COPYROM_2
   sec
 .02
   rts
-
 
 
 INIT_CART subroutine
@@ -900,8 +866,6 @@ SETUPTIMEOUT
   jmp BASIC
 
 
-
-
 ; ==============================================================
 ; DISPLAY STRING IN ROM    in AC/YR
 ; ==============================================================
@@ -1025,15 +989,11 @@ BASIC2
   jmp BASIC_WARM
 
 
-
-
-
 ; ==============================================================
 ; Handle the RESTORE key
 ; ==============================================================
 RESTORE
   jmp $fec7   ; Continue as if no cartridge installed
-
 
 
 ; ==============================================================
@@ -1171,8 +1131,6 @@ KEYS_0
 KEYS_1
   jsr GETIN
 
-
-
 F1_1
   cmp #$85  ;F1
   bne F2_1
@@ -1268,8 +1226,6 @@ WEF2
   jmp KEYS_0
 
 
-
-
 SET_RAM
   ;sta DL_IOBASE
   sta IO_FINAL
@@ -1340,9 +1296,6 @@ __SET_IO_RUN
 __SET_IO_RUN_E
 
 
-
-
-
 ;-------- SWITCH CARTRIDGE AND RUN CODE
 SYS_XY
   tya
@@ -1369,11 +1322,6 @@ SYS_XY_2
 
 
 
-
-
-
-
-
 ;-------- UNLOCK IO IN START-MODE
 UNLOCK_IO
   pha
@@ -1394,10 +1342,6 @@ __UNLOCK_IO
 ;  cli
   rts
 __UNLOCK_IO_E
-
-
-
-
 
 
 ;-------- TEST IF RAM IS AT (PT1)
@@ -1432,8 +1376,6 @@ __TERA_1
   cli
   rts
 __TEST_RAM_E
-
-
 
 
 SHOW_IO
@@ -1477,7 +1419,6 @@ FONT2   = 14                ; BIG AND SMALL LETTERS
 AT      = $40
 
 
-
 ; ==============================================================
 ; SUBMENU UTILITY
 ; ==============================================================
@@ -1496,7 +1437,6 @@ UTIL_MENU subroutine
   ;jsr SHOW_WE
 
   jsr GETIN
-
 
 
 .F1
@@ -1543,8 +1483,6 @@ F3_UT1
   jmp SSCREEN
 
 
-
-
 ; ========================================================================
 ; DISK LOADER
 ; Schaltet in den RAM Modus
@@ -1552,7 +1490,6 @@ F3_UT1
 ; Baut eine String Zeigertabelle auf ab TBL_NAMES ($6)
 ; Führt die Menü Auswahl Prozedur aus
 ; ========================================================================
-
 
 
 ;-------------- PRINT DLOADER SCREEN
@@ -1744,14 +1681,8 @@ CLHDR_ADR   = 3                         ;OFFSET START ADDRESS
 CLHDR_END   = 5                         ;STRUCT LDHDR LEN
 
 
-
-
-
-
-
 DL_STARTLINE = 3                        ;start line
 DL_LINES     = 17                       ;number of lines
-
 
 
 ;-------------- RETURN TO MAIN SCREEN
@@ -1873,8 +1804,6 @@ SET_MARKER
   jmp LIST_MARKER
 
 
-
-
 ; ========================================================================
 ; DISK LOADER - SELEKTIERTEN MENÜPUNKT AUSFÜHREN
 ; Sucht den gewählten Menü Eintrag im BASIC Text
@@ -1886,8 +1815,6 @@ SET_MARKER
 
 ;----MENU PUNKT GEWÄHLT!
 BASPTR = $7a
-
-
 
 
   ;INIT CATALOG BUFFER
@@ -1919,7 +1846,6 @@ INIT_CATALOG subroutine
   rts
 
 
-
   ;SET PTR TO LOADER TAB
 SET_LDBUF subroutine
   lda #<(DL_LDBUF)
@@ -1927,9 +1853,6 @@ SET_LDBUF subroutine
   sta PT1
   sty PT1 +1
   rts
-
-
-
 
 
   ;PROCESS SELECTED MENU ENTRY
@@ -2050,8 +1973,6 @@ SET_BIP_IOBASE SUBROUTINE
   rts
 
 
-
-
 ; ========================================================================
 ; DISK LOADER - SELEKTIERTEN MENÜPUNKT AUSFÜHREN
 ; Alle Zeilen mit Anweisungen sind bereits verarbeitet
@@ -2121,8 +2042,6 @@ SEL_NOIO subroutine
   rts
 
 
-
-
 ;------------ BLOCK WRITE PROTECT
 SEL_BLOCK1 subroutine
   ldy #0
@@ -2170,11 +2089,9 @@ LOCO_SYS subroutine
   jmp SYS_XY
 
 
-
 ; ==============================================================
 ; SUBS
 ; ==============================================================
-
 
 
 NEXTLINE subroutine
@@ -2220,10 +2137,6 @@ HIDE_MARKER subroutine
   jmp PUTCHR3
 
 
-
-
-
-
 ;----LIST PAGE
 LIST_PAGE subroutine
   lda #0
@@ -2257,7 +2170,6 @@ LIPA_2
   adc #DL_STARTLINE -1
   sta DL_LASTLIN
   rts
-
 
 
 ;----LIST LINE. AC=TAB ENTRY
@@ -2384,8 +2296,6 @@ BLD_TABLE_INIT subroutine
   rts
 
 
-
-
 ; ==============================================================
 ; MENU SELECT PARAM
 ; ==============================================================
@@ -2467,8 +2377,6 @@ SELO_E
   rts
 
 
-
-
 ; =====================================================================
 ; MENU LOADER
 ; Schaltet in ROM Modus und lädt 1 oder mehrere Dateien in den Speicher
@@ -2478,7 +2386,6 @@ SELO_E
 DO_LOADER  subroutine
   lda #EXEC_LOADER
   jmp EXECUTE_R
-
 
 
 ; ==============================================================
@@ -2525,17 +2432,12 @@ LOAD_BASIC_START subroutine
   sty LOADPTR +1
   rts
 
-
-
-
 SYS_IECOPEN = $f495
 SYS_TALK    = $ee14
 SYS_TALKSA  = $eece
 ;SYS_LOAD2   = $f58a
 ;SYS_LOAD2C  = $f5a3
 SYS_SETADR  = $e4c1
-
-
 
 
 ; ==============================================================
@@ -2556,17 +2458,12 @@ MSG_DOS
 ;  lda #62                                 ;">"
 
 
-
-
-
-
 ; ========================================================================
 ; FIRMWARE FLASHER
 ; Schaltet in den RAM Modus
 ; Ladet die Firmware Datei (FE3FIRMWARE) in den Speicher ab $2
 ; Flashed den Bereich $2 bis $4 in den EEPROM
 ; ========================================================================
-
 
 FLLO_STARTADR = $2000
 
@@ -2623,8 +2520,6 @@ FIRMW_FLASHER subroutine
 ; Baut eine String Zeigertabelle auf ab TBL_NAMES ($6)
 ; Führt die Menü Auswahl Prozedur aus
 ; ========================================================================
-
-
 
   ;-------------- PRINT DLOADER SCREEN AND FLASH SELECTED FILES
 
@@ -2707,7 +2602,6 @@ FLASH_PACKAGE_DEBUG
   jmp CART_FLASHER
 
 
-
 .errfull
   jsr SPAR_PRINTSTRING
   dc.b CR,RED,"CATALOG FULL!",0
@@ -2778,7 +2672,6 @@ FLASH_PACKAGE subroutine
   rts
 
 
-
   ;WRITE ENTRY INTO CATALOG
 FLASH_ENTRY subroutine
   jsr SPAR_PRINTSTRING
@@ -2816,7 +2709,6 @@ PRINT_OK
   rts
 
 
-
 ; =====================================================================
 ; FLASH LOADER
 ; lädt eine oder mehrere Dateien in den Speicher ab $2
@@ -2849,7 +2741,6 @@ FLSH_LOADER subroutine
   dey
   txa
   sta (PT2),y                           ; FILE LENGTGH LO
-
 
 
   ;COPY LOAD BUFFER INTO RAMDISK
@@ -2904,7 +2795,6 @@ LOAD_ERR
   rts
 
 
-
   ;NEXT LOAD HEADER
 ADD_PT2_LDBUF subroutine
   clc
@@ -2939,7 +2829,6 @@ PRINT_LOADING subroutine
   lda #62                               ;">"
   ldx #CR
   jmp CHROUT2
-
 
 
  ;------------
@@ -2987,14 +2876,9 @@ PRINT_LOADERR
   rts
 
 
-
-
-
 ;BIP_CMD     = $0293                     ;COMMAND BYTE
 ;BIP_IOBASE  = BIP_CMD +1                ;BASE FOR IO2 REGISTER 1 AND 2
 ;BIP_RUNADR  = BIP_CMD +3                ;RUN ADDRESS: 0=RUN BASIC, 1=RESET, 2=invalid, n=SYS
-
-
 
 
   ;WRITE PACKAGE HEADER
@@ -3007,8 +2891,6 @@ WRITE_CLHDR subroutine
   cpy #CLHDR_END
   bcc .00
   rts
-
-
 
 
 ; ========================================================================
@@ -3037,8 +2919,6 @@ CART_LOADER
   cpx #13                               ;CR
   beq .00
   jmp SSCREEN
-
-
 
 CLOADER1 subroutine
   jsr COPYROM                           ; COPY FIRMWARE TO SRAM
@@ -3074,7 +2954,6 @@ MENU_CATALOG subroutine
 ;  jmp BLD_TABLE_CAT
 
 
-
   ;----BUILD NAME TABLE FROM CATALOG
 BLD_TABLE_CAT subroutine
   jsr BLD_TABLE_INIT                    ;INITIALIZE BLD TABLE
@@ -3102,9 +2981,6 @@ BLD_TABLE_CAT subroutine
   rts
 
 
-
-
-
   ;INCREMENT PT2
 INC_PT2 subroutine
   inc PT2
@@ -3114,7 +2990,6 @@ INC_PT2 subroutine
   rts
 
 
-
   ;INCREMENT LOADPTR
 INC_LOADPTR subroutine
   inc LOADPTR
@@ -3122,7 +2997,6 @@ INC_LOADPTR subroutine
   inc LOADPTR +1
 .2
   rts
-
 
 
   ;---EXECUTE SELECTED MENU ENTRY
@@ -3142,8 +3016,6 @@ COPY_CATALOG
   clc
 .err
   rts
-
-
 
 
   ;---LOAD SELECTED MENU ENTRY
@@ -3197,7 +3069,6 @@ MENU_CLOADER subroutine
   jmp EXEC_PACKAGE
 
 
-
   ;RESTORE PACKAGE HEADER
 READ_CLHDR subroutine
   ldy #0
@@ -3210,7 +3081,6 @@ READ_CLHDR subroutine
   rts
 
 
-
   ;RESTORE FILE LOAD BUFFER
 READ_LDBUF subroutine
   ldy #0
@@ -3221,7 +3091,6 @@ READ_LDBUF subroutine
   cpy #LDBUF_END
   bcc .00
   rts
-
 
 
   ;READ FILE FROM RAMDISK
@@ -3292,8 +3161,6 @@ READ_FILE subroutine
   rts
 
 
-
-
 DL_LDBUF   = TBL_DATA +12               ;LOAD BUFFER - bis zu 4 x DATEI,OPTIONS
 LDBUF_LEN  = 0                          ;OFFSET FILENAME LENGTH
 LDBUF_FN   = 1                          ;OFFSET FILENAME
@@ -3301,7 +3168,6 @@ LDBUF_TYP  = 17                         ;OFFSET TYPE: B=BASIC, P=PROGRAM, C=CART
 LDBUF_LAD  = 18                         ;OFFSET LOAD ADRESS
 LDBUF_FLEN = 20                         ;OFFSET FILE LENGTH
 LDBUF_END  = 22                         ;STRUCT LDBUF LEN
-
 
 
 CLBUF_LEN   = 0                         ;OFFSET ENTRY NAME LENGTH
@@ -3355,8 +3221,6 @@ FLASH_INFO subroutine
   jmp WAIT_KEY
 
 
-
-
   ;PRINT LARGE ADDRESS (24 bit)
 HEXOUT_LA subroutine
   lda LEN_FNAM
@@ -3364,7 +3228,6 @@ HEXOUT_LA subroutine
   lda PTR_FNAM +1
   ldx PTR_FNAM
   jmp HEXOUT4
-
 
 
   ;SEARCH LAST ENTRY / COUNT IN XR
@@ -3405,7 +3268,6 @@ ADD_CLBUF
   rts
 
 
-
   ;CALC PACKAGE START ADDRESS
 FLASH_SADR subroutine
   ldy #CLBUF_SADR
@@ -3442,7 +3304,6 @@ FLASH_EADR
   rts
 
 
-
   ;CALC ALLOCATED BYTES IN FLASH (YR/XR/AC)
 FLASH_FREE subroutine
   jsr FLASH_ALLOC
@@ -3459,7 +3320,6 @@ FLASH_FREE subroutine
   rts
 
 
-
   ;CALC FREE BYTES IN FLASH (YR/XR/AC)
 FLASH_ALLOC subroutine
   jsr FLASH_EADR
@@ -3474,13 +3334,11 @@ FLASH_ALLOC subroutine
   rts
 
 
-
   ;---- SET CLOADER TABLE ADDRESS
 SET_CLO_START subroutine
   lda #<CLO_STARTADR
   ldy #>CLO_STARTADR
   jmp SET_LPT_AY
-
 
 
   ;---- BLOCK ADDRESS TO OFFSET
@@ -3498,8 +3356,6 @@ CALC_BLK2OFFS subroutine
   rts
 
 
-
-
     ;CLOADER HEADER (CLOAD BUFFER)
 CLBUF_LEN   = 0                         ;OFFSET ENTRY NAME LENGTH
 CLBUF_NAM   = 1                         ;OFFSET ENTRY NAME
@@ -3510,7 +3366,6 @@ CLBUF_SBANK = 26                        ;OFFSET START BANK
 CLBUF_EADR  = 27                        ;OFFSET END ADDRESS
 CLBUF_EBANK = 29                        ;OFFSET END BANK
 CLBUF_END   = 32                        ;STRUCT LDBUF LEN
-
 
 
 ; ========================================================================
@@ -3584,7 +3439,6 @@ RAMD_GETC_REST subroutine
   rts
 
 
-
   ;-----------------------
 RAMD_INC_PTR subroutine
   sec
@@ -3605,7 +3459,6 @@ RAMD_INC_PTR subroutine
   lda #>FLLO_STARTADR
 .exit
   rts
-
 
 
 ;-------- SUPER RAM PROCEDURE TO WRITE A BYTE
@@ -3650,11 +3503,6 @@ __RAMD_READ_MODE = . +1
 
   REND
 __RAMDISK_E
-
-
-
-
-
 
 
 ; ==============================================================
@@ -3703,10 +3551,6 @@ MOVE_WEDGE_LOW subroutine
 
 
 MOVE_CODE
-
-
-
-
 
 
 ; ==============================================================
@@ -3782,28 +3626,9 @@ dir_unexpand:       ;@@@
   jmp INIT_BASIC
 
 
-
-
-
 ;Pad to end to create valid cart image
 ;  org $afff
 ;  dc.b #$00
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3849,11 +3674,9 @@ DO_SAVE subroutine
   ;jmp MY_IECSAVE
 
 
-
   ;jmp MY_WDGE_START
 
 MY_WEDGE_START
-
 
 
 
@@ -3963,8 +3786,6 @@ RELO_E
 ;  jmp MY_WEDGE_INIT
 
 
-
-
 ; ==============================================================
 ; MY WEDGE
 ; ==============================================================
@@ -4000,7 +3821,6 @@ _relo5002 = . +1
   lda #$08
   sta F_CURDEV
   rts
-
 
 
 ; ==============================================================
@@ -4058,8 +3878,6 @@ RELO_TAB                                ;RELOC TABLE - 2 BYTE OFFSET LOW/HI
   dc.b 0
 
 
-
-
 ; ==============================================================
 ; MY INPUT LOOP
 ; ==============================================================
@@ -4090,16 +3908,11 @@ INPUT_LOOP subroutine
   jmp $c49c                             ; INSERT LINE INTO BASICTEXT
 
 
-
-
-
 DOLO_ERR
 _relo0024 = . +1
   jsr PRINT_DISK_ERR
   sec
   rts
-
-
 
 
 BASLOAD_END
@@ -4111,7 +3924,6 @@ BASLOAD_END_2
 DOLO_E
   clc                                   ; LOAD OK
   rts
-
 
 
 INLO_LOOP2
@@ -4171,7 +3983,6 @@ _relo0016 = . +1
   jmp PRINT_VALUE
 
 
-
   ;LOAD BASIC OR ABSOLUTE (/)
 DO_VERIFY
   ldy #$1                               ; SA=1
@@ -4226,7 +4037,6 @@ _relo0025 = . +1
   jmp DO_UNNEW
 
 
-
 ;------------ EXECUTE TOKEN
 INLO_LOOP2b
   ;cpx #TOK_RUN
@@ -4259,15 +4069,11 @@ INLO_LOOP2b
   beq INLO_LOOP2a
 
 
-
-
-
 ;------------ EXECUTE SOFT RESET
 INLO_RESET
 _relo0026 = . +1
   jsr RESET_IO
   jmp SOFT_RESET
-
 
 
 ;------------ KILL FE3 (IO,BANKS,WEDGE)
@@ -4280,8 +4086,6 @@ _relo0031 = . +1
   ldx #$9f
 _relo0032 = . +1
   jmp RESET_SYSTEM
-
-
 
 
 ;------------ DISABLE WEDGE
@@ -4301,8 +4105,6 @@ _relo5011 = . +1
   jmp $c480                             ;STD. INPUT LOOP
 
 
-
-
 ;------------ SET NOIO
 INLO_NOIO
   lda #$80                              ;RAM, NO-IO
@@ -4315,7 +4117,6 @@ _relo5012 = . +1
   ldy #>MSG_NOIO
 ;_relo0035 = . +1
   jmp SY_STROUT
-
 
 
 ;------------ SET BLK IO
@@ -4360,7 +4161,6 @@ _relo0039 = . +1
   jmp CROUT
 
 
-
 ;------------
 SEL_BLOCK_P
   jsr CHRGOT
@@ -4390,9 +4190,6 @@ _relo0041 = . +1
   bcc SEL_BLOCK_P
 SEBL_E
   rts
-
-
-
 
 
 ; ==============================================================
@@ -4479,7 +4276,6 @@ INC_CHRPTR
   rts
 
 
-
 ; ==============================================================
 ; GET LOAD PARAM
 ; ==============================================================
@@ -4519,7 +4315,6 @@ GELO_5
   rts
 
 
-
 ; ==============================================================
 ; SET DEVICE#
 ; ==============================================================
@@ -4555,8 +4350,6 @@ _relo0072 = . +1
   jmp CROUT
 
 
-
-
 ; ==============================================================
 ; SYS PROCS
 ; ==============================================================
@@ -4583,7 +4376,6 @@ IECIN    = JIF_IECIN                    ; get char from IEC
 IECOUT   = JIF_IECOUT                   ; send char to IEC
 
 
-
 ; ==============================================================
 ; MY LOAD
 ; ==============================================================
@@ -4591,7 +4383,6 @@ IECOUT   = JIF_IECOUT                   ; send char to IEC
 FRMNUM   = $cd8a                        ; GET NUMERIC VALUE
 FRMBYTE  = $d79e                        ; GET BYTE VALUE TO X
 CNVWORD  = $d7f7                        ; CONVERT TO WORD VALUE INTO Y/A; $14 (PT3)
-
 
   ; LOAD VECTOR                         :: "fnam",PA,SA[,loadadr]
 MY_LOAD  subroutine
@@ -4634,7 +4425,6 @@ _relo0081 = . +1
   lda #$60
 _relo0082 = . +1
   jsr DISK_TALK
-
 
 
 _relo0084 = . +1
@@ -4700,7 +4490,6 @@ _relo0098 = . +1
   jsr STOREBYTE
 
 .3
-
 
 
 ;_relo0087 = . +1
@@ -4864,15 +4653,7 @@ STOREBYTE subroutine
   BNE .FBA7
 
 
-
 ;--------------JIFFY FASTLOAD
-
-
-
-
-
-
-
 
 
 ;.MYLO_5
@@ -4907,9 +4688,6 @@ STOREBYTE subroutine
 ;.MYLO_7a
 ;  bit SY_STATUS
 ;  bvc MYLO_5                            ; EOI?
-
-
-
 
 
   ; PRINT LOAD AT ADDRESS
@@ -4957,7 +4735,6 @@ _relo0093 = . +1
   jsr .3
 _relo0094 = . +1
   jmp CROUT
-
 
 
 ; ========================================================================
@@ -5061,8 +4838,6 @@ _relo0411 = . +1
   rts
 
 
-
-
 ; ==============================================================
 ; DISK CMD
 ; ==============================================================
@@ -5108,9 +4883,6 @@ _relo0305 = . +1
   dex
   bne DICM_2
   rts
-
-
-
 
 
   ;CHECK 'DEVICE NOT PRESENT'
@@ -5247,10 +5019,6 @@ DIST_E
   clc
 DIST_ERR
   rts
-
-
-
-
 
 
 ; ==============================================================
@@ -5449,7 +5217,6 @@ PRCA_SPCOL
   rts
 
 
-
 ; ==============================================================
 ; DISPLAY CHAR
 ; ==============================================================
@@ -5538,7 +5305,6 @@ PUTCHR3
   lda $0286                         ;Farbcode
   sta (C_COLP),y
   rts
-
 
 
 ; ==============================================================
@@ -5673,8 +5439,6 @@ CHKCOM subroutine
   rts
 
 
-
-
 GETHEX subroutine                       ; GET HEX NUMBER A=HI, X=LO, C=0:error
   jsr CHRGET
 
@@ -5748,7 +5512,6 @@ ASBY_E
   rts
 
 
-
 ; ==============================================================
 ; PRINT WORD VALUE BETWEEN HEX/BIN
 ; ==============================================================
@@ -5785,7 +5548,6 @@ _relo0189 = . +1
   jmp CROUT
 
 
-
 ;------------ PRINT HEX VALUE IN  X/A
 HEXOUT subroutine
   pha
@@ -5820,8 +5582,6 @@ _relo0201 = . +1
   jmp BSOUT
 
 
-
-
 ;------------ PRINT BIN VALUE IN  X/A
 BINOUT
   pha
@@ -5852,8 +5612,6 @@ BIN1a
   jsr BSOUT
   pla
   rts
-
-
 
 
 ;------------ PRINT ASC VALUE IN  X/A
@@ -5890,8 +5648,6 @@ ASC1_1
 ASC1_2
 _relo0222 = . +1
   jmp CHROUT2
-
-
 
 
 ; ==============================================================
@@ -5960,11 +5716,6 @@ NEXT_STATEMENT
   rts
 
 
-
-
-
-
-
 ;-------- SWITCH CARTRIDGE AND RESET SYSTEM
 
 VIC    = $9000
@@ -6004,18 +5755,12 @@ COPY_PROC subroutine
   rts
 
 
-
-
 ;-------- RAM PROCEDURE TO SWITCH CARTRIDGE AND RESET
 __SET_IO_RESET
   sta IO_FINAL
   stx IO_FINAL +1
   jmp SOFT_RESET
 __SET_IO_RESET_E
-
-
-
-
 
 RESET_IO
   sei
@@ -6029,7 +5774,6 @@ RESET_IO
   sta VIA1 +$0e                         ; IER: clear all bits
   sta VIA2 +$0e                         ; IER: clear all bits
   rts
-
 
 
 ; ==============================================================
@@ -6154,7 +5898,6 @@ l6EB4
 l6EB7
   jmp $eeb7                             ;err TIME OUT
 
-
 lF96E
   STA $912C
   BIT $911F
@@ -6181,9 +5924,6 @@ lF995
   LDX #$02
 lF997
   rts
-
-
-
 
 
 ;--------------JIFFY BYTE IN
@@ -6371,7 +6111,6 @@ l7CB7
 ;--------------JIFFY BYTE OUT
 
 
-
 ;--------------BAUT EIN BYTE AUS 2 NIBBLES ZUSAMMEN
 lEC4E
   LDA $B3
@@ -6385,7 +6124,6 @@ lEC4E
   ORA $B3
   RTS
 ;--------------JIFFY BYTE IN
-
 
 
 ;--------------JIFFY UNTALK/UNLISTEN
@@ -6411,7 +6149,6 @@ lEF0F
   JSR $EF84
   JMP $E4A0
 ;--------------JIFFY UNTALK/UNLISTEN
-
 
 
 ;--------------JIFFY TALK SA
@@ -6446,9 +6183,6 @@ lF39E
 ;--------------JIFFY DATA TABLE
 
 
-
-
-
 ; ==============================================================
 ; LOADER TEXTE AND TOKEN TABLE
 ; ==============================================================
@@ -6463,7 +6197,6 @@ TOK_SYS  = TOK_NOIO +6
 TOK_OLD  = TOK_NOIO +7
 TOK_OFF  = TOK_NOIO +8
 TOK_KILL = TOK_NOIO +9
-
 
 
 TOKEN
@@ -6482,11 +6215,6 @@ MSG_RES
 TOKEN_TAB
   dc.b TOK_NOIO,TOK_BLKD,TOK_BLKP,TOK_BLKP,TOK_RES,TOK_OFF,TOK_KILL,TOK_OLD,TOK_OLD
   dc.b TOK_RELO,TOK_RUN,TOK_SYS
-
-
-
-
-
 
 ; ==============================================================
 ; MESSAGE TEXTE
@@ -6512,20 +6240,10 @@ MY_WEDGE_END
 ; == END OF MINI WEDGE ============================================================
 
 
-
 WEDGEMESSAGE1b
   dc.b $11, RED, "FE3 WEDGE (", 0
 WEDGEMESSAGE1c
   dc.b "OFF)",BLUE,13,0
-
-
-
-
-
-
-
-
-
 
 
 ; ==============================================================
@@ -6573,8 +6291,6 @@ SET_BASE_VECTORS
   rts
 
 
-
-
 ;
 ; JIFFY CHKIN    ($031e vector)
 ;
@@ -6600,9 +6316,6 @@ JChkIn subroutine
 .3
   jsr TALKSA
   jmp $f301
-
-
-
 
 
 ;
@@ -6632,8 +6345,6 @@ JChkOut subroutine
   jmp $f342
 
 
-
-
 ;
 ; JIFFY GETIN    ($032a vector)
 ;
@@ -6642,7 +6353,6 @@ JGetIn subroutine
   cmp #8
   bcs .2
   jmp $f1f5                             ;std. GetIn
-
 
 
 ;
@@ -6663,8 +6373,6 @@ JBasIn
   jmp JIF_IECIN
 
 
-
-
 ;
 ; JIFFY BASOUT    ($0326 vector)
 ;
@@ -6678,7 +6386,6 @@ JBasOut subroutine
 .2
   pla
   jmp JIF_IECOUT
-
 
 
 ;
@@ -6699,9 +6406,6 @@ JClrCh
   jsr JIF_UNTALK
 .2
   jmp $f403                             ;std. ClrAll
-
-
-
 
 
 ; ==============================================================
@@ -6942,7 +6646,6 @@ FlashCodeWriteXpInc subroutine
   rts
 
 
-
 ;------------
 MSG_VENDOR
   dc.b RVSON,13,"VENDOR:",RVSOFF,0
@@ -6953,11 +6656,6 @@ MSG_A4
 
 MSG_EEE
   dc.b "??",13,"BAD EEPROM",0
-
-
-
-
-
 
 ; ==============================================================
 ; OPEN FIRMWARE FILE AND FLASH
@@ -6974,8 +6672,6 @@ MSG_ERASE
   dc.b "ERASING ...",13,0
 MSG_BLANK
   dc.b "BLANK CHECK ...",0
-
-
 
 
 ; ==============================================================
@@ -7021,14 +6717,9 @@ TestEE subroutine
   rts
 
 
-
-
-
-
 ; ==============================================================
 ; OPEN FIRMWARE FILE AND FLASH
 ; ==============================================================
-
 
 FLASH_FIRMWARE subroutine
   lda #<MSG_FLASH
@@ -7080,7 +6771,6 @@ FLASH_FIRMWARE_2
   rts
 
 
-
   ;ERASE CURRENT SECTOR
 FLASH_ERASE
   lda #<MSG_ERASE
@@ -7125,7 +6815,6 @@ BLANK_CHECK_FULL subroutine
   rts
 
 
-
   ;BLANK CHECK BANK 0
 BLANK_CHECK subroutine
   lda #<MSG_BLANK
@@ -7149,7 +6838,6 @@ BLANK_CHECK subroutine
   bne .02
 .exit
   rts
-
 
 
 SET_LOADPTR subroutine
@@ -7202,13 +6890,8 @@ FLASH_HEXOUT subroutine
   adc #58
   jmp BSOUT
 
-
-
   REND
 FLASH_FW_END
-
-
-
 
 ; ==============================================================
 ; DISPLAY STRING    in AC/YR
@@ -7229,7 +6912,6 @@ STROUT subroutine
   bne .1
 .E
   rts
-
 
 
 ; ==============================================================
@@ -7392,15 +7074,6 @@ STNO_0
   bne STNO_0
 STNO_E
   rts
-
-
-
-
-
-
-
-
-
 
 
   org $bfff
