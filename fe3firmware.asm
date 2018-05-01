@@ -7406,8 +7406,8 @@ STNO_E
   org $bfff
   dc.b #$00
 
-; Emacs settings
-Local Variables:
-tab-width: 2
-asm-indent-level: 2
-End:
+;--- Emacs settings ---
+;Local Variables:
+;tab-width: 2
+;asm-indent-level: 2
+;End:
