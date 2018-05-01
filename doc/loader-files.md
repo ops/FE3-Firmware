@@ -1,11 +1,14 @@
-Final Expansion Documentation - LOADER files
+# Final Expansion Documentation - LOADER files
 
 Original German by Diddl
+
 Translated by Vic20-Ian
+
 Edited by ops
 
 
-The purpose of the Loader files:
+
+## The purpose of the Loader files
 
 The loader file is needed by FE3 Disk Loader which always looking for the file
 "LOADER" in the current directory. Disk Loader interprets these script files
@@ -20,9 +23,7 @@ Flash Rom. The Cart Utilities (F6) Flash Program (F3) makes use of the Loader
 scripts to package the files and commands into an executable block of code
 before flashing to the rom.
 
-
-Structure of the file "LOADER"
-
+## Structure of the file "LOADER"
 
 The LOADER file consists of one or several sections. Each section is presented
 as a menu item in Diskloader. A section consists of:
@@ -60,12 +61,14 @@ are recognized by Disk Loader and interpreted:
 
 - Load statement : Loads a file from a floppy disk or SD
 - Disk Command : Sends a command to the SD2IEC or to a floppy.
-- BLK, BLKP, BLKD : Instructions for configuring the FE3 hardware - block write protect or disable.
+- BLK, BLKP, BLKD : Instructions for configuring the FE3 hardware - block
+write protect or disable.
 - NOIO : Instructions for configuring the hardware FE3 – Hide FE3 IO registers.
 - RESET : Instruction to restart the VC-20 (Soft Reset)
 - SYS : Starts a machine code program at the given address (in hexadecimal!)
 - RUN : Starts a BASIC program
-- RELOAD: Restart command to the File Loader (runs the Loader script in the current directory)
+- RELOAD: Restart command to the File Loader (runs the Loader script in the
+current directory)
 
 The Load Statement loads a file from the SD card or from a floppy. Several
 load instructions can be sequenced if for example games with several parts
