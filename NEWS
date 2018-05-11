@@ -1,8 +1,8 @@
 v0.23 (2018-05-11)
-+ Restored version R022D Basic-Relinker call related code. Users seem to
-  have problems with it
+- Restored version R022D Basic-Relinker call related code. Users seem to
+  have problems with it.
 
-+ This version is identical to version R022D except three version string
+- This version is identical to version R022D except three version string
   related bytes. Source code has been cleaned up a bit and committed to
   GitHub.
 
