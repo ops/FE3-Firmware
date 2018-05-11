@@ -63,6 +63,9 @@ GETIN      = $ffe4
 PRNINT  = $ddcd     ; print integer in X/A
 
 
+_flashBase    = $2000
+_flash555     = _flashBase + $555
+_flash2aa     = _flashBase + $2aa
 
 START_ADR  = $1200
 
@@ -144,6 +147,7 @@ TEST_PROGGI
   sta FE1
   jsr TEST_REGISTER                     ; TEST FE3 REGISTER
   bcs TEPR_E
+  jsr PrintVendorAndDeviceID
   jsr TEST_ROM                          ; ROM READ MODE
   jsr TEST_RAM                          ; RAM MODE
   bcs TEPR_E
@@ -162,6 +166,49 @@ TEPR_E
 
 
 
+
+PrintVendorAndDeviceID subroutine
+  lda #<MSG_VENDOR
+  ldy #>MSG_VENDOR
+  jsr STROUT
+  jsr FlashCodeVendorID
+  tya
+  pha
+  lda #$00
+  jsr PRNINT
+  lda #"/"
+  jsr BSOUT
+  pla
+  tax
+  lda #$00
+  jsr PRNINT
+  lda #13
+  jsr BSOUT
+  rts
+
+
+_flashCodeMagic subroutine
+  lda #$aa
+  sta _flash555
+  lda #$55
+  sta _flash2aa
+  rts
+
+FlashCodeEndSequ subroutine             ; RESET
+_flashCodeEndSequ
+  lda #$f0
+  sta _flashBase
+  rts
+
+
+;=============== GET VENDOR/DEVICE ID in X,Y
+FlashCodeVendorID subroutine
+  jsr _flashCodeMagic
+  lda #$90
+  sta _flash555
+  ldx _flashBase
+  ldy _flashBase+1
+  jmp _flashCodeEndSequ
 
 
 ; ==============================================================
@@ -861,6 +908,9 @@ MSG_PROT
   dc.b "BLK-PROTECT..",0
 MSG_DISABLE
   dc.b "BLK-DISABLE..",0
+
+MSG_VENDOR
+  dc.b "VENDOR/DEV...",0
 
 MSG_ERROR
   dc.b RED,"ERROR#",0
