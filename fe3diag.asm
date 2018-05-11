@@ -135,11 +135,11 @@ TEST_PROGGI
   ldy #>MSG_TITLE
   jsr STROUT
   sei
-  jsr PrintVendorAndDeviceID
   lda #0
   sta FE1
   jsr TEST_REGISTER                     ; TEST FE3 REGISTER
   bcs TEPR_E
+  jsr PrintVendorAndDeviceID
   jsr TEST_ROM                          ; ROM READ MODE
   jsr TEST_RAM                          ; RAM MODE
   bcs TEPR_E
