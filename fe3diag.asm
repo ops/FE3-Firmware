@@ -56,10 +56,6 @@ GETIN      = $ffe4
 PRNINT  = $ddcd     ; print integer in X/A
 
 
-_flashBase    = $2000
-_flash555     = _flashBase + $555
-_flash2aa     = _flashBase + $2aa
-
 START_ADR  = $1200
 
 
@@ -135,12 +131,15 @@ COUNT   = FLGCOM
 
 
 TEST_PROGGI
+  lda #<MSG_TITLE
+  ldy #>MSG_TITLE
+  jsr STROUT
   sei
+  jsr PrintVendorAndDeviceID
   lda #0
   sta FE1
   jsr TEST_REGISTER                     ; TEST FE3 REGISTER
   bcs TEPR_E
-  jsr PrintVendorAndDeviceID
   jsr TEST_ROM                          ; ROM READ MODE
   jsr TEST_RAM                          ; RAM MODE
   bcs TEPR_E
@@ -164,6 +163,8 @@ PrintVendorAndDeviceID subroutine
   lda #<MSG_VENDOR
   ldy #>MSG_VENDOR
   jsr STROUT
+  lda #FEMOD_ROM_P
+  sta IO_FINAL
   jsr FlashCodeVendorID
   tya
   pha
@@ -179,6 +180,9 @@ PrintVendorAndDeviceID subroutine
   jsr BSOUT
   rts
 
+_flashBase    = $2000
+_flash555     = _flashBase + $555
+_flash2aa     = _flashBase + $2aa
 
 _flashCodeMagic subroutine
   lda #$aa
@@ -888,9 +892,10 @@ FEOK_1
   jmp STROUT
 
 
-
+MSG_TITLE
+  dc.b BLUE,13,"FE3 DIAGNOSTICS",13,13,0
 MSG_REGISTER
-  dc.b BLUE,13,"FE3 DIAGNOSTICS",13,13,"REGISTER.....",0
+  dc.b "REGISTER.....",0
 MSG_ROMTEST
   dc.b "ROM/XMODE....",0
 MSG_RAMTEST

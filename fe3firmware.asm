@@ -6699,9 +6699,11 @@ TestEE subroutine
   jsr SY_STROUT
   pla
   tax
-;     ldx #$a4
+	cpx #$e2
+	beq .DEVICEOK
   cpx #$a4                                                    ; 29F040
   bne .ERR1
+.DEVICEOK
   lda #<MSG_A4
   ldy #>MSG_A4
   jsr SY_STROUT

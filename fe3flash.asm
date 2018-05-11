@@ -173,9 +173,11 @@ TestEE
   jsr STROUT
   pla
   tax
-;     ldx #$a4
+	cpx #$e2
+	beq .DEVICEOK
   cpx #$a4                                                    ; 29F040
   bne EE_ERR1
+.DEVICEOK
   lda #0
   jsr HEXOUT
 
