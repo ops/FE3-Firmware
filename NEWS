@@ -1,17 +1,20 @@
-v0.23 (2018-xx-xx)
+v0.23 (2018-05-11)
 + Restored version R022D Basic-Relinker call related code. Users seem to
   have problems with it
 
++ This version is identical to version R022D except three version string
+  related bytes. Source code has been cleaned up a bit and committed to
+  GitHub.
 
 ------------------------------------------------------------------------------
 FE3Firmware Revisions (compile with: dasm.exe fe3rxxx.asm -ofe3firmware.prg -llist.txt):
 
+R022e (May, 31st, 2015):
++ Moved Basic-Relinker call
+
 Flash patch r021 by Nils Eilers
 firmware patch r022d by Dirk Vroomen, April 2014 (full ram for loader-files)
 firmware patch r022e by Dirk Vroomen, May 2015   (Basic-Relinker call missing)
-
-R022e (May, 31st, 2015):
-+ Moved Basic-Relinker call
 
 R022d:
 + Added support for large loader files (patched by denial-user "dabone")
