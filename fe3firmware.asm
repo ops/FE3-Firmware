@@ -6688,6 +6688,8 @@ TestEE subroutine
   pha
   cpx #$01                              ; AMD
   beq .VENDOROK
+  cpx #$20                              ; AMD clone
+  beq .VENDOROK
   cpx #$c2                              ; AMD by MX
   bne .ERR0
 
