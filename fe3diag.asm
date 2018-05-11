@@ -1,13 +1,6 @@
-; VIC 20 Final Expansion Cartridge - Diagnose Programm  r002
-; Thomas Winkler - 2009
-
-
-; Testet die FE3/FE1 Hardware durch
-; Testbedingung:
-;  - Firmware aus (starten mit Commodore Taste)
-;  - Firmware ab $6 geflashed
-;  - Rest des Flashspeicher leer ($ff)
-
+;;;
+;;; VIC-20 Final Expansion Cartridge diagnostics
+;;;
 
   processor 6502                         ;VIC20
 
@@ -977,3 +970,9 @@ YELLOW  = $9E
 FONT1   = 142               ; BIG LETTERS & GRAFIC
 FONT2   = 14                ; BIG AND SMALL LETTERS
 AT      = $40
+
+;--- Emacs settings ---
+;Local Variables:
+;tab-width: 2
+;asm-indent-level: 2
+;End:
