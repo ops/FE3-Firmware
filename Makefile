@@ -24,6 +24,7 @@ fe3flash.prg: fe3flash.asm
 
 package:
 	zip fe3firmware-$(shell echo v$(FW_VERSION) | tr -d \").zip \
+		NEWS \
 		fe3firmware \
 		fe3diag.prg \
 		fe3flash.prg
