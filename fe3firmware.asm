@@ -6648,12 +6648,9 @@ FlashCodeWriteXpInc subroutine
 
 ;------------
 MSG_VENDOR
-  dc.b RVSON,13,"VENDOR:",RVSOFF,0
+  dc.b 13,RVSON,"VENDOR:",RVSOFF,0
 MSG_DEVICEID
-  dc.b RVSON,"01  DEVICE:",RVSOFF,0
-MSG_A4
-  dc.b "A4",13,0
-
+  dc.b RVSON,"DEVICE:",RVSOFF,0
 MSG_EEE
   dc.b "??",13,"BAD EEPROM",0
 
@@ -6694,20 +6691,22 @@ TestEE subroutine
   bne .ERR0
 
 .VENDOROK
+  lda #$00
+  jsr HEXOUT
   lda #<MSG_DEVICEID
   ldy #>MSG_DEVICEID
   jsr SY_STROUT
   pla
   tax
-	cpx #$e2
-	beq .DEVICEOK
+  cpx #$e2
+  beq .DEVICEOK
   cpx #$a4                                                    ; 29F040
   bne .ERR1
 .DEVICEOK
-  lda #<MSG_A4
-  ldy #>MSG_A4
-  jsr SY_STROUT
-
+  lda #$00
+  jsr HEXOUT
+  lda #13
+  jsr BSOUT
   clc
   rts
 
