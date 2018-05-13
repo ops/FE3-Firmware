@@ -1,3 +1,6 @@
+;;;
+;;; VIC-20 Final Expansion Cartridge flash utility
+;;;
 
   processor 6502                         ;VIC20
 
@@ -156,6 +159,8 @@ TestEE
   pha
   cpx #$01                              ; AMD
   beq .VENDOROK
+  cpx #$20                              ; AMD clone
+  beq .VENDOROK
   cpx #$c2                              ; AMD by MX
   bne EE_ERR0
 
@@ -168,9 +173,11 @@ TestEE
   jsr STROUT
   pla
   tax
-;     ldx #$a4
+	cpx #$e2
+	beq .DEVICEOK
   cpx #$a4                                                    ; 29F040
   bne EE_ERR1
+.DEVICEOK
   lda #0
   jsr HEXOUT
 
@@ -684,3 +691,10 @@ YELLOW  = $9E
 FONT1   = 142               ; BIG LETTERS & GRAFIC
 FONT2   = 14                ; BIG AND SMALL LETTERS
 AT      = $40
+
+
+;--- Emacs settings ---
+;Local Variables:
+;tab-width: 2
+;asm-indent-level: 2
+;End:

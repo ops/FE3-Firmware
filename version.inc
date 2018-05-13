@@ -1,1 +1,1 @@
-FW_VERSION = "0.23"
+FW_VERSION = "0.24"
