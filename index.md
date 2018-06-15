@@ -1,8 +1,7 @@
 # Firmware releases for VIC-20 Final Expansion 3 (FE3)
 
 For more information about FE3 see
-[FE3 WIKI]
-(http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
+[FE3 WIKI](http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
 
 ## Release v0.24 (2018-06-15)
 
