@@ -65,14 +65,16 @@ Disabling these Registers is used to prevent new software from altering the
 configuration of the Final Expansion without intention. With this facility the
 compatibility of the Final Expansion with any conceivable software is ensured.
 
+```
 Bit 0 ... Visibility of the Vic-20 memory block 0 (Blk0 - $0400-$0FFF)
 Bit 1 ... Visibility of the Vic-20 memory block 1 (Blk1 - $2000-$3FFF)
 Bit 2 ... Visibility of the Vic-20 memory block 2 (Blk2 - $4000-$5FFF)
 Bit 3 ... Visibility of the Vic-20 memory block 3 (Blk3 - $6000-$7FFF)
-Bit 4 ... Visibility of the Vic-20 memory block 05 (Blk5 - $A000-$BFFF)
+Bit 4 ... Visibility of the Vic-20 memory block 5 (Blk5 - $A000-$BFFF)
 Bit 5 ... 1: invert A13
 Bit 6 ... 1: invert A14
 Bit 7 ... Visibility of IO-3 (Register 1 und 2)
+```
 
 Banking:
 
@@ -82,7 +84,7 @@ available for use in order to cover every requirement.
 
 Final Expansion Modes of use:
 
-•START MODE (000zzzzz):
+• START MODE (000zzzzz):
 
 After a reset with the red button or after initial power on, all the bits in
 the register are set to zero, in this way the FE is always in START MODE after
@@ -120,7 +122,7 @@ Block 5 go to SRAM address $E000 (SRAM Block 7, highest block of the second 32k
 bank - Bank 1). If the SRAM 1 mode is switched to, the SRAM Block 7 lies
 exactly in Block 5 of the Vic-20.
 
-•SUPER ROM MODE (010zzzzz):
+• SUPER ROM MODE (010zzzzz):
 
 With Poke 39938,64 the flash memory of the Final Expansion is enabled.
 
@@ -176,7 +178,7 @@ overwritten.
 Why do we need this? Some game cartridges overwrite themselves (intentionally),
 so that they won't run in RAM.
 
-•RAM 2 MODE (110zzzzz):
+• RAM 2 MODE (110zzzzz):
 
 With POKE 39938,192 RAM Mode 2 of the Final Expansion is activated.
 
@@ -215,7 +217,7 @@ run in Bank 2 and display the contents of the whole of Bank 1.
 
 This monitor would need almost no memory for itself.
 
-•SUPER RAM MODE (101zzzzz):
+• SUPER RAM MODE (101zzzzz):
 
 With Poke 39938,160 the SUPER RAM MODE of Final Expansion is activated.
 Read operations come from the RAM from the selected Bank.
@@ -242,7 +244,7 @@ RAM?
 Who knows what innovative uses resourceful developers will find, one could for
 example easily save 3 full disks in there ...
 
-•RAM / ROM MODE (011zzzzz):
+• RAM / ROM MODE (011zzzzz):
 
 With Poke 39938,96 the RAM/ROM mode of the Final Expansion is enabled.
 
@@ -284,7 +286,7 @@ RAM Bank.
 Why do we need this?: The firmware can activate the ROM BLock where the code
 has just been added. Simultaneously one can access the remaining RAM.
 
-•Flash Write Mode (001zzzzz):
+• Flash Write Mode (001zzzzz):
 
 With Poke 39938,32 the FLash Mode of the Final Expansion is activated.
 
