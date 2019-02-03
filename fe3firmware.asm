@@ -8,7 +8,7 @@
 
   rorg $7000
 
-#include "version.inc"
+  include "version.inc"
 
 ;------------------------------
 CAS_BUF     = $033c                     ;CASSETTE BUFFER
