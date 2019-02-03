@@ -2531,6 +2531,8 @@ FIRMW_FLASHER subroutine
 .01
 
 CART_FLASHER
+  lda #$91
+  jsr SetVicMemConfig
   jsr INIT_CART                         ; Screen Colors
   jsr SPAR_PRINTSTRING
   dc.b CLRHOME,YELLOW,FONT2,RVSON,"---- cART fLASHER ----",CR,CR,0
