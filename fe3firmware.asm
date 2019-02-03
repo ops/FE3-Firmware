@@ -2192,7 +2192,7 @@ LIST_LINE subroutine
   sty C_CHR
   jsr PUTCHR2
   lda C_COL
-  cmp #$15
+  cmp #$14
   beq .EE
   inc C_COL
   ldy C_CHR
