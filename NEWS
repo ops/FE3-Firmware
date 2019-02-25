@@ -1,3 +1,7 @@
+v0.25 (2019-02-25)
+- Correctly display menu items which are longer than 20 chars
+- Added support for large loader files in "Flash Program"
+
 v0.24 (2018-06-15)
 - Added support for new flash Vendor and Device IDs.
 
