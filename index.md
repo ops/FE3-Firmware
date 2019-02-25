@@ -3,6 +3,13 @@
 For more information about FE3 see
 [FE3 WIKI](http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
 
+## Release v0.25 (2019-02-25)
+
+- Correctly display menu items which are longer than 20 chars
+- Added support for large loader files in "Flash Program"
+
+Download [fe3firmware-v0.25.zip](releases/fe3firmware-v0.25.zip).
+
 ## Release v0.24 (2018-06-15)
 
 - Added support for new flash Vendor and Device IDs.
