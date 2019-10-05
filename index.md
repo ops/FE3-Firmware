@@ -3,6 +3,12 @@
 For more information about FE3 see
 [FE3 WIKI](http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
 
+## Release v0.26 (2019-10-05)
+
+- Removed relinking after load. Some BASIC programs failed to run correctly.
+
+Download [fe3firmware-v0.26.zip](releases/fe3firmware-v0.26.zip).
+
 ## Release v0.25 (2019-02-25)
 
 - Correctly display menu items which are longer than 20 chars
