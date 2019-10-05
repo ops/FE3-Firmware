@@ -13,7 +13,7 @@ endif
 
 all: fe3firmware fe3diag.prg fe3flash.prg
 
-fe3firmware: fe3firmware.asm
+fe3firmware: fe3firmware.asm version.inc
 	$(AS) $< $(ASFLAGS) -o$@
 
 fe3diag.prg: fe3diag.asm
