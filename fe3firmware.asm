@@ -2413,6 +2413,7 @@ LOAD_MENU subroutine
   ldx BASSTRT             ;Start lo#
   ldy BASSTRT +1          ;Start hi#
   jsr LOAD
+  jsr SY_PGMLINK
   jmp BASLOAD_END
 
 LOAD_BASIC subroutine
@@ -3922,7 +3923,6 @@ BASLOAD_END
 BASLOAD_END_2
   stx BASVAR
   sty BASVAR +1
-  jsr SY_PGMLINK
 DOLO_E
   clc                                   ; LOAD OK
   rts
