@@ -2,9 +2,9 @@ os:
   - linux
 
 install:
-  - wget https://sourceforge.net/projects/dasm-dillon/files/dasm-dillon/2.20.11/dasm-2.20.11-2014.03.04-source.tar.gz
-  - tar -xzf dasm-2.20.11-2014.03.04-source.tar.gz
-  - pushd dasm-2.20.11-20140304 && make && cd bin && sudo cp * /usr/local/bin/ && popd
+  - wget https://github.com/dasm-assembler/dasm/archive/2.20.11.tar.gz
+  - tar -xzf 2.20.11.tar.gz
+  - pushd dasm-2.20.11 && make && cd bin && sudo cp * /usr/local/bin/ && popd
 
 script:
   - make
