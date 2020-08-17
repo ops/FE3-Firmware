@@ -161,6 +161,8 @@ TestEE
   beq .VENDOROK
   cpx #$20                              ; AMD clone
   beq .VENDOROK
+  cpx #$37                              ; AMIC
+  beq .VENDOROK
   cpx #$c2                              ; AMD by MX
   bne EE_ERR0
 
@@ -173,9 +175,11 @@ TestEE
   jsr STROUT
   pla
   tax
-	cpx #$e2
-	beq .DEVICEOK
-  cpx #$a4                                                    ; 29F040
+  cpx #$e2
+  beq .DEVICEOK
+  cpx #$86                              ; AMIC 29040B
+  beq .DEVICEOK
+  cpx #$a4                              ; 29F040
   bne EE_ERR1
 .DEVICEOK
   lda #0

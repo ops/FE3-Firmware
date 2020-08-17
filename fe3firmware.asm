@@ -743,7 +743,6 @@ START2 subroutine
 .bootloader ; execute boot-loader
   lda #FEMOD_ROM                        ;ROM
   jsr UNLOCK_IO                         ;UNLOCK IO
-  jsr INIT_CART
   jsr COPYROM
   lda #$08
   sta F_CURDEV
@@ -6689,6 +6688,8 @@ TestEE subroutine
   beq .VENDOROK
   cpx #$20                              ; AMD clone
   beq .VENDOROK
+  cpx #$37                              ; AMIC
+  beq .VENDOROK
   cpx #$c2                              ; AMD by MX
   bne .ERR0
 
@@ -6702,7 +6703,9 @@ TestEE subroutine
   tax
   cpx #$e2
   beq .DEVICEOK
-  cpx #$a4                                                    ; 29F040
+  cpx #$86                              ; AMIC 29040B
+  beq .DEVICEOK
+  cpx #$a4                              ; 29F040
   bne .ERR1
 .DEVICEOK
   lda #$00
