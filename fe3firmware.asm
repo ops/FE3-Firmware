@@ -6703,7 +6703,7 @@ TestEE subroutine
   tax
   cpx #$e2
   beq .DEVICEOK
-  cpx #$86                              ; AMIC 29040B
+  cpx #$86                              ; AMIC A29040B
   beq .DEVICEOK
   cpx #$a4                              ; 29F040
   bne .ERR1
