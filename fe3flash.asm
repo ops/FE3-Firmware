@@ -157,6 +157,7 @@ TestEE
   jsr FlashCodeVendorID
   tya
   pha
+        IFNCONST NO_VENDOR_CHECK
   cpx #$01                              ; AMD
   beq .VENDOROK
   cpx #$20                              ; AMD clone
@@ -165,6 +166,7 @@ TestEE
   beq .VENDOROK
   cpx #$c2                              ; AMD by MX
   bne EE_ERR0
+        ENDIF
 
 .VENDOROK
   lda #0
@@ -175,12 +177,14 @@ TestEE
   jsr STROUT
   pla
   tax
+        IFNCONST NO_VENDOR_CHECK
   cpx #$e2
   beq .DEVICEOK
-  cpx #$86                              ; AMIC 29040B
+  cpx #$86                              ; AMIC A29040B
   beq .DEVICEOK
   cpx #$a4                              ; 29F040
   bne EE_ERR1
+        ENDIF
 .DEVICEOK
   lda #0
   jsr HEXOUT

@@ -11,6 +11,12 @@ ifdef verbose
 	ASFLAGS += -v$(verbose)
 endif
 
+# Disable fe3flash.prg VENDOR/DEVICE check.
+# Needed for initial flashing of unsupported flash.
+ifdef no_vendor_check
+	ASFLAGS += -DNO_VENDOR_CHECK
+endif
+
 all: fe3firmware fe3diag.prg fe3flash.prg
 
 fe3firmware: fe3firmware.asm version.inc
