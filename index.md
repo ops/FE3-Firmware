@@ -3,6 +3,9 @@
 For more information about FE3 see
 [FE3 WIKI](http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
 
+## Release v0.28 (2020-08-18)
+- Added support for AMIC A29040B flash chip.
+
 ## Release v0.27 (2019-11-05)
 
 - Added a relink call after loading of a BASIC program. This is hopefully
