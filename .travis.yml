@@ -2,9 +2,9 @@ os:
   - linux
 
 install:
-  - wget https://github.com/dasm-assembler/dasm/archive/2.20.11.tar.gz
-  - tar -xzf 2.20.11.tar.gz
-  - pushd dasm-2.20.11 && make && cd bin && sudo cp * /usr/local/bin/ && popd
+  - wget https://github.com/dasm-assembler/dasm/archive/2.20.14.tar.gz
+  - tar -xzf 2.20.14.tar.gz
+  - pushd dasm-2.20.14 && make && cd bin && sudo cp * /usr/local/bin/ && popd
 
 script:
   - make
