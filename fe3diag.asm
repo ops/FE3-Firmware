@@ -47,6 +47,7 @@ LOADEND = $ae
 
 SOFT_RESET = 64802                      ;SOFT RESET
 CURSOR_POS = $e50a
+SY_INITVEC = $fd52
 
 BSOUT      = $ffd2
 GETIN      = $ffe4
@@ -131,6 +132,7 @@ COUNT   = FLGCOM
 
 
 TEST_PROGGI
+  jsr SY_INITVEC
   lda #<MSG_TITLE
   ldy #>MSG_TITLE
   jsr STROUT
