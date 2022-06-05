@@ -3,6 +3,11 @@
 For more information about FE3 see
 [FE3 WIKI](http://sleepingelephant.com/denial/wiki/index.php?title=Final_Expansion)
 
+## Release v0.29 (2022-06-05)
+- Fix for fe3diag crash when the wedge is active.
+
+Download [fe3firmware-v0.29.zip](releases/fe3firmware-v0.29.zip).
+
 ## Release v0.28 (2020-08-18)
 - Added support for AMIC A29040B flash chip.
 
