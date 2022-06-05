@@ -1,3 +1,6 @@
+v0.29 (2022-06-05)
+- Fix for fe3diag crash when the wedge is active.
+
 v0.28 (2020-08-18)
 - Added support for AMIC A29040B flash chip.
 
